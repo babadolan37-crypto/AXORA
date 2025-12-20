@@ -4,7 +4,6 @@ import { Plus, DollarSign, FileText, CheckCircle, ArrowLeftRight, Upload, Trash2
 import { useAdvancePayment, AdvanceExpenseItem } from '../hooks/useAdvancePayment';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { supabase } from '../lib/supabase';
-import { AdvancePaymentSetupGuide } from './AdvancePaymentSetupGuide';
 
 interface AdvanceReimbursementSheetProps {
   employees: string[];
