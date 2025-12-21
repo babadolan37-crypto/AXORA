@@ -201,7 +201,9 @@ export function ModuleNavigator({ activeModule, onChange }: ModuleNavigatorProps
               {MODULES.find(m => m.id === activeModule)?.icon && (
                 <>
                   {(() => {
-                    const Icon = MODULES.find(m => m.id === activeModule)!.icon!;
+                    const module = MODULES.find(m => m.id === activeModule);
+                    if (!module || !module.icon) return null;
+                    const Icon = module.icon;
                     return <Icon size={20} className="text-blue-600" />;
                   })()}
                 </>
