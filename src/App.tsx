@@ -29,7 +29,6 @@ function App() {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataMigrated, setDataMigrated] = useState(false);
-  const [showCashTypeMigration, setShowCashTypeMigration] = useState(false);
 
   const {
     loading,

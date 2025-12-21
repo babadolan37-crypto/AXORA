@@ -975,10 +975,7 @@ export function AdvanceReimbursementSheet({ employees }: AdvanceReimbursementShe
         </div>
       )}
 
-      {/* Modal: Setup Guide */}
-      {showSetupGuide && (
-        <AdvancePaymentSetupGuide onDismiss={() => setShowSetupGuide(false)} />
-      )}
+      {/* Modal: Setup Guide - Removed */}
     </div>
   );
 }

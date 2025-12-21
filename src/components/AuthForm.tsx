@@ -9,7 +9,6 @@ interface AuthFormProps {
 export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true); // Default ke LOGIN (user sudah punya akun)
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [name, setName] = useState('');
@@ -107,7 +106,6 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       if (err.message.includes('Email logins are disabled') || err.message.includes('Email signups are disabled')) {
         setError('');
         setMessage('⚠️ Supabase Email Auth belum diaktifkan. Silakan ikuti langkah berikut:');
-        setShowSetupGuide(true);
         setLoading(false);
         return;
       }
