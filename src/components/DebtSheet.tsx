@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, AlertCircle, Printer, X, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertCircle, Printer, X } from 'lucide-react';
 import { DebtEntry } from '../types/accounting';
 
 interface DebtSheetProps {

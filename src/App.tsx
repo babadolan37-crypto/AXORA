@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { User } from '@supabase/supabase-js';
 import { AuthForm } from './components/AuthForm';
 import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
@@ -26,7 +27,7 @@ type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | M
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataMigrated, setDataMigrated] = useState(false);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Database, Shield, History } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 
@@ -30,14 +30,10 @@ export function SettingsSheet({
   onNavigateToRoles,
   onNavigateToAudit
 }: SettingsSheetProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'advanced'>('basic');
   const [newIncomeSource, setNewIncomeSource] = useState('');
   const [newExpenseCategory, setNewExpenseCategory] = useState('');
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [newEmployee, setNewEmployee] = useState('');
-
-  // Debug log
-  console.log('SettingsSheet - onResetAllData available:', !!onResetAllData);
 
   // Cash balance settings
   const { balances, setBalance } = useCashManagement();

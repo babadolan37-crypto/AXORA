@@ -87,7 +87,6 @@ export function useCashManagement() {
 
   // Load balances
   const loadBalances = async () => {
-    console.log('🔄 loadBalances called');
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

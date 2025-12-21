@@ -9,7 +9,6 @@ export function useSupabaseData() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   
   const [incomeSources, setIncomeSources] = useState<string[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
@@ -42,7 +41,6 @@ export function useSupabaseData() {
   // Listen for cashBalanceUpdated event to reload entries
   useEffect(() => {
     const handleCashBalanceUpdate = () => {
-      console.log('📡 cashBalanceUpdated event received in useSupabaseData, reloading entries...');
       loadIncomeEntries();
       loadExpenseEntries();
     };
@@ -95,7 +93,6 @@ export function useSupabaseData() {
       // Check if it's a table not found error
       if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST205') {
         console.warn('⚠️ SUPABASE TABLES NOT FOUND - Setup required!');
-        setShowSetupGuide(true);
       }
       setLoading(false);
     }
@@ -510,7 +507,7 @@ export function useSupabaseData() {
     };
     
     // Try with cash_type first
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('expense_entries')
       .insert({
         ...dataToInsert,
@@ -528,7 +525,7 @@ export function useSupabaseData() {
         
         try {
           // Retry without cash_type for backward compatibility
-          const { data: retryData, error: retryError } = await supabase
+          const { error: retryError } = await supabase
             .from('expense_entries')
             .insert(dataToInsert)
             .select()

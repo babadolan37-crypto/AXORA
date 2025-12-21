@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAdminData } from '../hooks/useAdminData';
-import { Users, Shield, Activity, RefreshCw } from 'lucide-react';
+import { Users, Activity, RefreshCw } from 'lucide-react';
 
 export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'logs' }) {
   const { users, auditLogs, loading, error, refresh, updateUserRole } = useAdminData();
