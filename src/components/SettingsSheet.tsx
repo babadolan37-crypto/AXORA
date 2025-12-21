@@ -49,11 +49,8 @@ export function SettingsSheet({
     setBigCashBalance(bigBalance.toString());
     setSmallCashBalance(smallBalance.toString());
 
-    // Load threshold from localStorage
-    const savedThreshold = localStorage.getItem('lowBalanceThreshold');
-    if (savedThreshold) {
-      setLowBalanceThreshold(savedThreshold);
-    }
+    // Load threshold from localStorage - REMOVED for Cloud-Only Policy
+    // Default is 1000000
   }, [balances]);
 
   const handleAddIncomeSource = (e: React.FormEvent) => {
@@ -125,8 +122,8 @@ export function SettingsSheet({
       const smallAmount = parseFloat(smallCashBalance) || 0;
       await setBalance('small', smallAmount);
 
-      // Save low balance threshold to localStorage
-      localStorage.setItem('lowBalanceThreshold', lowBalanceThreshold);
+      // Save low balance threshold - Memory Only for now (Cloud Schema Update Required for Persistence)
+      // localStorage.setItem('lowBalanceThreshold', lowBalanceThreshold);
 
       alert('Pengaturan saldo berhasil disimpan!');
     } catch (error) {

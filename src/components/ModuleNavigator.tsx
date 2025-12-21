@@ -142,10 +142,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function ModuleNavigator({ activeModule, onChange }: ModuleNavigatorProps) {
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const saved = localStorage.getItem('sidebarExpanded');
-    return saved ? JSON.parse(saved) : true;
-  });
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -160,9 +157,10 @@ export function ModuleNavigator({ activeModule, onChange }: ModuleNavigatorProps
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('sidebarExpanded', JSON.stringify(isExpanded));
-  }, [isExpanded]);
+  // localStorage removed for Cloud-Only Policy
+  // useEffect(() => {
+  //   localStorage.setItem('sidebarExpanded', JSON.stringify(isExpanded));
+  // }, [isExpanded]);
 
   const toggleSidebar = () => {
     if (isMobile) {
