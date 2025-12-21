@@ -12,7 +12,6 @@ interface SettingsSheetProps {
   onUpdateExpenseCategories: (categories: string[]) => void;
   onUpdatePaymentMethods: (methods: string[]) => void;
   onUpdateEmployees: (employees: string[]) => void;
-  onOpenCashSetup?: () => void;
   onResetAllData?: () => Promise<boolean>;
   onNavigateToRoles?: () => void; // NEW: Navigate to Roles
   onNavigateToAudit?: () => void; // NEW: Navigate to Audit
