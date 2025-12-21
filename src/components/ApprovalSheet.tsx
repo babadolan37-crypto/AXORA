@@ -1,7 +1,7 @@
 import { CheckSquare, Clock, CheckCircle, XCircle, Plus, X, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface ApprovalRequest {
   id: string;

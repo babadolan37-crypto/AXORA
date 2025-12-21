@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, FileText, CheckCircle, Clock, AlertCircle, DollarSign, X, Trash2, Edit2, Eye, Users, Send } from 'lucide-react';
 import { useInvoice } from '../hooks/useInvoice';
 import { Invoice, Customer } from '../types/invoice';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export function InvoiceSheet() {
   const invoiceHook = useInvoice();

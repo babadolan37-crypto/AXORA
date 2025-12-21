@@ -1,7 +1,7 @@
 import { Building2, Upload, CheckCircle, AlertCircle, X, Plus, Link } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface BankAccount {
   id: string;

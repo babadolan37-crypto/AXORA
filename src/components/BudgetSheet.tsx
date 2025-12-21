@@ -3,7 +3,7 @@ import { Plus, TrendingUp, TrendingDown, Target, AlertCircle, Calendar, Trash2, 
 import { useBudget } from '../hooks/useBudget';
 import { Budget, BudgetActual } from '../types/budget';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface BudgetSheetProps {
   incomeEntries: IncomeEntry[];

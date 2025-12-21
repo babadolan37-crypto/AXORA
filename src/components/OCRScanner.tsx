@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Camera, Scan, X, AlertCircle, CheckCircle, Loader2, FileImage } from 'lucide-react';
-import Tesseract from 'tesseract.js@5.1.1';
+import Tesseract from 'tesseract.js';
 
 interface OCRResult {
   date: string;
