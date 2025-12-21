@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Camera, X, Image as ImageIcon, TrendingUp, TrendingDown, Scan, Wallet, ArrowRightLeft,
-  FileText,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -8,7 +7,6 @@ import { IncomeEntry, ExpenseEntry } from '../types/accounting';
 import { PhotoViewer } from './PhotoViewer';
 import { OCRScanner } from './OCRScanner';
 import { UniversalTransactionForm } from './UniversalTransactionForm';
-import { SmallCashTransferForm } from './SmallCashTransferForm';
 import { QuickCashTransferModal } from './QuickCashTransferModal';
 import { CashDashboard } from './CashDashboard';
 
@@ -19,12 +17,12 @@ interface TransactionSheetProps {
   expenseCategories: string[];
   paymentMethods: string[];
   employees: string[];
-  onAddIncome: (entry: Omit<IncomeEntry, 'id'>) => void;
-  onUpdateIncome: (id: string, entry: Omit<IncomeEntry, 'id'>) => void;
-  onDeleteIncome: (id: string) => void;
-  onAddExpense: (entry: Omit<ExpenseEntry, 'id'>) => void;
-  onUpdateExpense: (id: string, entry: Omit<ExpenseEntry, 'id'>) => void;
-  onDeleteExpense: (id: string) => void;
+  onAddIncome: (entry: Omit<IncomeEntry, 'id'>) => Promise<void>;
+  onUpdateIncome: (id: string, entry: Omit<IncomeEntry, 'id'>) => Promise<void>;
+  onDeleteIncome: (id: string) => Promise<void>;
+  onAddExpense: (entry: Omit<ExpenseEntry, 'id'>) => Promise<void>;
+  onUpdateExpense: (id: string, entry: Omit<ExpenseEntry, 'id'>) => Promise<void>;
+  onDeleteExpense: (id: string) => Promise<void>;
 }
 
 type TransactionType = 'income' | 'expense' | 'transfer';

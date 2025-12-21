@@ -16,7 +16,6 @@ export function AdvanceReimbursementSheet({ employees }: AdvanceReimbursementShe
   const [showAdvanceModal, setShowAdvanceModal] = useState(false);
   const [showSettlementModal, setShowSettlementModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [selectedAdvance, setSelectedAdvance] = useState<string | null>(null);
 
   // Advance form state
