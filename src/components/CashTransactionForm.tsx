@@ -18,7 +18,7 @@ interface CashTransactionFormProps {
 export function CashTransactionForm({ onSubmit, onCancel }: CashTransactionFormProps) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [cashType, setCashType] = useState<CashType>('big');
-  const [transactionType, setTransactionType] = useState<TransactionType>('out');
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [proof, setProof] = useState('');
@@ -96,7 +96,7 @@ export function CashTransactionForm({ onSubmit, onCancel }: CashTransactionFormP
       // Reset form
       setDate(new Date().toISOString().split('T')[0]);
       setCashType('big');
-      setTransactionType('out');
+      setTransactionType('expense');
       setAmount('');
       setDescription('');
       setProof('');
@@ -160,8 +160,8 @@ export function CashTransactionForm({ onSubmit, onCancel }: CashTransactionFormP
                 onChange={(e) => setTransactionType(e.target.value as TransactionType)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="in">Pemasukan</option>
-                <option value="out">Pengeluaran</option>
+                <option value="income">Pemasukan</option>
+                <option value="expense">Pengeluaran</option>
               </select>
             </div>
 

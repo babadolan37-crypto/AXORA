@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Filter, Calendar, User, FileText } from 'lucide-react';
+import { X, Filter, User, FileText } from 'lucide-react';
 import { useAuditLog } from '../hooks/useAuditLog';
 import { AuditAction, AuditEntityType } from '../types/audit-log';
 

@@ -156,19 +156,19 @@ export function CashDashboard() {
 
       // Today
       if (tx.date === today) {
-        if (tx.transactionType === 'in') todayIncome += amount;
+        if (tx.transactionType === 'income') todayIncome += amount;
         else todayExpense += amount;
       }
 
       // This week
       if (txDate >= startOfWeek) {
-        if (tx.transactionType === 'in') weekIncome += amount;
+        if (tx.transactionType === 'income') weekIncome += amount;
         else weekExpense += amount;
       }
 
       // This month
       if (txDate >= startOfMonth) {
-        if (tx.transactionType === 'in') monthIncome += amount;
+        if (tx.transactionType === 'income') monthIncome += amount;
         else monthExpense += amount;
       }
     });

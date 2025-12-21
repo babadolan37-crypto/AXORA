@@ -182,13 +182,13 @@ export function DashboardSheet({
   // Cash transactions summary
   const cashIncome = useMemo(() => {
     return cashTransactions
-      .filter((t) => t.transactionType === 'in')
+      .filter((t) => t.transactionType === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
   }, [cashTransactions]);
 
   const cashExpense = useMemo(() => {
     return cashTransactions
-      .filter((t) => t.transactionType === 'out')
+      .filter((t) => t.transactionType === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
   }, [cashTransactions]);
 
@@ -256,7 +256,7 @@ export function DashboardSheet({
 
       // Cash Transfers during period
       filteredCashTransactions.forEach(t => {
-          if (t.transactionType === 'in') {
+          if (t.transactionType === 'income') {
               if (t.cashType === 'big') netChangeBig += t.amount;
               else netChangeSmall += t.amount;
           } else {

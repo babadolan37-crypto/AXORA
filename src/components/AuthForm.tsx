@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogIn, UserPlus, Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;

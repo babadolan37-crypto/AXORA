@@ -1,5 +1,6 @@
-import { RefreshCcw, Plus, Play, Pause, X, Trash2, Edit2, CheckCircle } from 'lucide-react';
+import { Plus, Play, Pause, X, Trash2, Edit2, CheckCircle } from 'lucide-react';
 import { useRecurring } from '../hooks/useRecurring';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useState } from 'react';
 import { RecurringTransaction } from '../types/recurring';
 import { toast } from 'sonner';
@@ -12,6 +13,7 @@ interface RecurringSheetProps {
 
 export function RecurringSheet({ expenseCategories, incomeSources, employees }: RecurringSheetProps) {
   const recurringHook = useRecurring();
+  const { addIncomeEntry, addExpenseEntry } = useSupabaseData();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   
@@ -88,24 +90,26 @@ export function RecurringSheet({ expenseCategories, incomeSources, employees }: 
           amount: parseFloat(formData.amount),
           interval: formData.interval,
           startDate: formData.startDate,
-          endDate: formData.endDate || null,
-          employee: formData.employee || null,
+          endDate: formData.endDate || undefined,
+          employee: formData.employee || undefined,
           cashType: formData.cashType,
           autoExecute: formData.autoExecute,
+          active: true,
         });
         toast.success('Transaksi berulang berhasil diupdate!');
       } else {
-        await recurringHook.createRecurring({
+        await recurringHook.addRecurring({
           type: formData.type,
           category: formData.category,
           description: formData.description,
           amount: parseFloat(formData.amount),
           interval: formData.interval,
           startDate: formData.startDate,
-          endDate: formData.endDate || null,
-          employee: formData.employee || null,
+          endDate: formData.endDate || undefined,
+          employee: formData.employee || undefined,
           cashType: formData.cashType,
           autoExecute: formData.autoExecute,
+          active: true,
         });
         toast.success('Transaksi berulang berhasil ditambahkan!');
       }
@@ -117,7 +121,7 @@ export function RecurringSheet({ expenseCategories, incomeSources, employees }: 
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
     try {
-      await recurringHook.toggleRecurring(id, !currentStatus);
+      await recurringHook.updateRecurring(id, { active: !currentStatus });
       toast.success(currentStatus ? 'Transaksi dijeda' : 'Transaksi diaktifkan');
     } catch (error) {
       toast.error('Gagal mengubah status');
@@ -126,7 +130,29 @@ export function RecurringSheet({ expenseCategories, incomeSources, employees }: 
 
   const handleExecute = async (id: string) => {
     try {
-      await recurringHook.executeRecurring(id);
+      await recurringHook.executeRecurring(id, async (data) => {
+        if (data.type === 'income') {
+          return await addIncomeEntry({
+            date: data.date,
+            source: data.category,
+            description: data.description,
+            amount: data.amount,
+            paymentMethod: 'Transfer',
+            cashType: data.cashType,
+            receivedFrom: data.employee,
+          });
+        } else {
+          return await addExpenseEntry({
+            date: data.date,
+            category: data.category,
+            description: data.description,
+            amount: data.amount,
+            paymentMethod: 'Transfer',
+            cashType: data.cashType,
+            paidTo: data.employee,
+          });
+        }
+      });
       toast.success('Transaksi berhasil dieksekusi!');
     } catch (error) {
       toast.error('Gagal mengeksekusi transaksi');

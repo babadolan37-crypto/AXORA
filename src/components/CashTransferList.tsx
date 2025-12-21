@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Trash2, CheckCircle, XCircle, DollarSign, Eye, Image as ImageIcon, Upload } from 'lucide-react';
+import { FileText, Trash2, CheckCircle, DollarSign, Eye, Image as ImageIcon, Upload } from 'lucide-react';
 import { CashTransfer } from '../types/cash-management';
 import { compressImage } from '../utils/imageCompression';
 

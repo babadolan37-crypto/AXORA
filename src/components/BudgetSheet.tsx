@@ -93,7 +93,7 @@ export function BudgetSheet({
         });
         toast.success('Budget berhasil diupdate!');
       } else {
-        await budgetHook.createBudget({
+        await budgetHook.addBudget({
           type: formData.type,
           category: formData.category,
           month: selectedMonth,

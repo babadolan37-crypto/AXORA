@@ -1,6 +1,6 @@
 // Jenis Kas
 export type CashType = 'big' | 'small';
-export type TransactionType = 'in' | 'out';
+export type TransactionType = 'income' | 'expense';
 
 // Saldo Kas
 export interface CashBalance {

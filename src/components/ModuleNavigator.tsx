@@ -2,13 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Receipt,
-  TrendingUp,
   FileText,
   CheckSquare,
   Calculator,
   Users,
-  History,
-  Bell,
   Building2,
   RefreshCcw,
   Settings,

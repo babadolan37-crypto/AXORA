@@ -7,7 +7,7 @@ interface ExpenseItem {
   category: string;
 }
 
-type TransactionType = 'transfer' | 'reimburse' | 'pengeluaran-lain' | 'pemasukan';
+type TransactionType = 'transfer' | 'reimburse' | 'expense' | 'income';
 
 interface UniversalTransactionFormProps {
   onSubmit: (data: {
@@ -29,8 +29,8 @@ interface UniversalTransactionFormProps {
 const TRANSACTION_TYPES = [
   { value: 'transfer', label: 'Transfer' },
   { value: 'reimburse', label: 'Reimburse' },
-  { value: 'pengeluaran-lain', label: 'Pengeluaran Lain' },
-  { value: 'pemasukan', label: 'Pemasukan' },
+  { value: 'expense', label: 'Pengeluaran Lain' },
+  { value: 'income', label: 'Pemasukan' },
 ];
 
 const formatCurrency = (value: number) => {

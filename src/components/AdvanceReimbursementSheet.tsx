@@ -53,7 +53,7 @@ export function AdvanceReimbursementSheet({ employees }: AdvanceReimbursementShe
       // Record as cash transaction (pengeluaran)
       await addTransaction({
         cashType: advanceCashType,
-        transactionType: 'out',
+        transactionType: 'expense',
         amount: amount,
         description: `[Advance Payment] Advance untuk ${advanceEmployee}${advanceNotes ? ` - ${advanceNotes}` : ''}`,
         date: advanceDate,
@@ -172,7 +172,7 @@ export function AdvanceReimbursementSheet({ employees }: AdvanceReimbursementShe
       if (advance.difference > 0) {
         await addTransaction({
           cashType: advance.cash_type,
-          transactionType: 'in',
+          transactionType: 'income',
           amount: amount,
           description: `[Pengembalian Advance] Pengembalian dari ${advance.employee_name} - Settlement advance ${advance.advance_amount.toLocaleString('id-ID')}`,
           date: returnDate,

@@ -111,7 +111,7 @@ export function IncomeSheet({ entries, incomeSources, paymentMethods, onAddEntry
       description: entry.description,
       amount: entry.amount.toString(),
       paymentMethod: entry.paymentMethod,
-      notes: entry.notes,
+      notes: entry.notes || '',
       receivedFrom: entry.receivedFrom || '',
       cashType: entry.cashType || 'big' as CashType, // Default ke Kas Besar jika tidak ada
       photos: entry.photos || []

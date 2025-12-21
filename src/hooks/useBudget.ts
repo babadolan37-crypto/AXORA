@@ -116,7 +116,7 @@ export function useBudget(incomeEntries: IncomeEntry[], expenseEntries: ExpenseE
     const incomeBudgets = monthBudgets.filter(b => b.type === 'income');
     incomeBudgets.forEach(budget => {
       const actual = actualIncomes
-        .filter(i => i.category === budget.category)
+        .filter(i => i.source === budget.category)
         .reduce((sum, i) => sum + i.amount, 0);
       const variance = actual - budget.amount;
       const variancePercent = budget.amount > 0 ? (variance / budget.amount) * 100 : 0;

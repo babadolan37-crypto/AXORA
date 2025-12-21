@@ -226,7 +226,7 @@ export function useCashManagement() {
 
       // Update balance
       const currentBalance = balances.find((b: CashBalance) => b.cashType === transaction.cashType)?.balance || 0;
-      const newBalance = transaction.transactionType === 'in' 
+      const newBalance = transaction.transactionType === 'income' 
         ? currentBalance + transaction.amount 
         : currentBalance - transaction.amount;
       
@@ -259,7 +259,7 @@ export function useCashManagement() {
 
       // Restore balance (reverse the transaction)
       const currentBalance = balances.find((b: CashBalance) => b.cashType === transaction.cashType)?.balance || 0;
-      const newBalance = transaction.transactionType === 'in'
+      const newBalance = transaction.transactionType === 'income'
         ? currentBalance - transaction.amount
         : currentBalance + transaction.amount;
       

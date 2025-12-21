@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAssetData } from '../hooks/useAssetData';
-import { Plus, Trash2, Box, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Trash2, Box, TrendingDown, DollarSign } from 'lucide-react';
 import { FixedAsset } from '../types';
 
 export function FixedAssetsSheet() {

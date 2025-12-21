@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Camera, X, Image as ImageIcon, TrendingUp, TrendingDown, Scan, Wallet, ArrowRightLeft,
+import { Plus, Trash2, Camera, TrendingUp, TrendingDown, Scan, Wallet, ArrowRightLeft,
   Eye,
-  EyeOff
+  EyeOff,
+  X,
+  Pencil,
+  Image as ImageIcon
 } from 'lucide-react';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
 import { PhotoViewer } from './PhotoViewer';
@@ -58,7 +61,7 @@ export function TransactionSheet({
     paidTo: '', // Untuk expense: dibayar ke siapa
     notes: '', // Keterangan tambahan
     // NEW: Fields untuk detail transaksi
-    expenseTransactionType: 'pengeluaran-lain' as 'transfer' | 'reimburse' | 'pengeluaran-lain',
+    expenseTransactionType: 'expense' as 'transfer' | 'reimburse' | 'expense',
     debitAmount: '', // Nominal Debit (Masuk)
     creditAmount: '', // Nominal Kredit (Keluar)
     transferToSmallCash: false,
@@ -192,7 +195,7 @@ export function TransactionSheet({
       paidTo: '',
       notes: '',
       // NEW: Reset detail transaksi
-      expenseTransactionType: 'pengeluaran-lain',
+      expenseTransactionType: 'expense',
       debitAmount: '',
       creditAmount: '',
       transferToSmallCash: false,
@@ -307,7 +310,7 @@ export function TransactionSheet({
       paidTo: 'category' in entry ? (entry.paidTo || '') : '',
       notes: entry.notes || '',
       // NEW: Set detail transaksi
-      expenseTransactionType: 'category' in entry ? (entry.category === 'Transfer' ? 'transfer' : 'reimburse') : 'pengeluaran-lain',
+      expenseTransactionType: 'category' in entry ? (entry.category === 'Transfer' ? 'transfer' : 'reimburse') : 'expense',
       debitAmount: 'source' in entry ? entry.amount.toString() : '',
       creditAmount: 'category' in entry ? entry.amount.toString() : '',
       transferToSmallCash: false,
@@ -349,7 +352,7 @@ export function TransactionSheet({
     date: string;
     cashType: 'big' | 'small';
     description: string;
-    transactionType: 'transfer' | 'reimburse' | 'pengeluaran-lain' | 'pemasukan';
+    transactionType: 'transfer' | 'reimburse' | 'expense' | 'income';
     receiverName: string;
     debitAmount: number;
     creditAmount: number;
@@ -365,7 +368,7 @@ export function TransactionSheet({
       // Handle Income
       const entry = {
         date: data.date,
-        source: data.transactionType === 'pemasukan' ? 'Pemasukan Lain' : data.transactionType,
+        source: data.transactionType === 'income' ? 'Pemasukan Lain' : data.transactionType,
         description: data.description,
         amount: amount,
         paymentMethod: 'Transfer',
@@ -649,10 +652,10 @@ export function TransactionSheet({
                 <label className="block text-sm text-gray-700 mb-1">Jenis Transaksi</label>
                 <select
                   value={formData.expenseTransactionType}
-                  onChange={(e) => setFormData({ ...formData, expenseTransactionType: e.target.value as 'transfer' | 'reimburse' | 'pengeluaran-lain' })}
+                  onChange={(e) => setFormData({ ...formData, expenseTransactionType: e.target.value as 'transfer' | 'reimburse' | 'expense' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="pengeluaran-lain">Pengeluaran Lain</option>
+                  <option value="expense">Pengeluaran Lain</option>
                   <option value="transfer">Transfer</option>
                   <option value="reimburse">Reimburse</option>
                 </select>

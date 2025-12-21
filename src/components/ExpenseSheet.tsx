@@ -111,7 +111,7 @@ export function ExpenseSheet({ entries, expenseCategories, paymentMethods, onAdd
       description: entry.description,
       amount: entry.amount.toString(),
       paymentMethod: entry.paymentMethod,
-      notes: entry.notes,
+      notes: entry.notes || '',
       paidTo: entry.paidTo || '',
       cashType: entry.cashType || 'big' as CashType, // Default ke Kas Besar jika tidak ada
       photos: entry.photos || []

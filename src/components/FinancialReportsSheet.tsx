@@ -1,11 +1,5 @@
 import { useState } from 'react';
 import { 
-  FileText, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Calendar,
-  Download,
   Printer,
   ChevronDown,
   ChevronUp

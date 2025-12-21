@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText, CheckCircle, Clock, AlertCircle, DollarSign, X, Trash2, Edit2, Eye, Users, Send } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, AlertCircle, DollarSign, X, Trash2, Eye, Users, Send } from 'lucide-react';
 import { useInvoice } from '../hooks/useInvoice';
 import { Invoice, Customer } from '../types/invoice';
 import { toast } from 'sonner';
@@ -163,7 +163,7 @@ export function InvoiceSheet() {
         await invoiceHook.updateInvoice(editingInvoice.id, invoiceData);
         toast.success('Invoice berhasil diupdate!');
       } else {
-        await invoiceHook.createInvoice(invoiceData);
+        await invoiceHook.addInvoice(invoiceData);
         toast.success('Invoice berhasil dibuat!');
       }
 
@@ -182,7 +182,7 @@ export function InvoiceSheet() {
     }
 
     try {
-      await invoiceHook.createCustomer(customerForm);
+      await invoiceHook.addCustomer(customerForm);
       toast.success('Customer berhasil ditambahkan!');
       setCustomerForm({ name: '', email: '', phone: '', address: '', npwp: '', notes: '' });
       setShowCustomerModal(false);

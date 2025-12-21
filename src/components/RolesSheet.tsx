@@ -1,4 +1,4 @@
-import { Users, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { DEFAULT_ROLE_PERMISSIONS } from '../types/user-roles';
 
 export function RolesSheet() {

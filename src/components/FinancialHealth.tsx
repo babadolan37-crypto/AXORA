@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
-import { TrendingUp, TrendingDown, Activity, AlertTriangle, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { TrendingDown, Activity, AlertTriangle, Wallet } from 'lucide-react';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
 import { CashBalance } from '../types/cash-management';
 

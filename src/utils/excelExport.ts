@@ -271,11 +271,12 @@ export async function exportToExcel(
     
     let source = '-';
     let dest = '-';
-    if (t.transactionType === 'out') {
+    if (t.transactionType === 'expense') {
         source = t.cashType === 'big' ? 'Kas Besar' : 'Kas Kecil';
         dest = t.cashType === 'big' ? 'Kas Kecil' : 'Kas Besar';
     } else {
-        source = t.cashType === 'big' ? 'Luar' : 'Luar'; // Should be 'in'
+        // Income (Receive from other cash)
+        source = t.cashType === 'big' ? 'Kas Kecil' : 'Kas Besar';
         dest = t.cashType === 'big' ? 'Kas Besar' : 'Kas Kecil';
     }
 
@@ -464,7 +465,7 @@ export async function exportToExcel(
 
   // Inter-Cash Transfers
   interCashTransfers.forEach(t => {
-     if (t.transactionType === 'in') {
+     if (t.transactionType === 'income') {
         combined.push({
             date: t.date,
             id: t.id || '-',
@@ -612,11 +613,11 @@ export async function exportToExcel(
     const dayExpensesSmall = expenses.filter(e => e.cashType === 'small' && e.date === d).reduce((s, e) => s + e.amount, 0);
 
     // Transfers
-    const dayTransferInBig = interCashTransfers.filter(t => t.cashType === 'big' && t.transactionType === 'in' && t.date === d).reduce((s, t) => s + t.amount, 0);
-    const dayTransferInSmall = interCashTransfers.filter(t => t.cashType === 'small' && t.transactionType === 'in' && t.date === d).reduce((s, t) => s + t.amount, 0);
+    const dayTransferInBig = interCashTransfers.filter(t => t.cashType === 'big' && t.transactionType === 'income' && t.date === d).reduce((s, t) => s + t.amount, 0);
+    const dayTransferInSmall = interCashTransfers.filter(t => t.cashType === 'small' && t.transactionType === 'income' && t.date === d).reduce((s, t) => s + t.amount, 0);
     
-    const dayTransferOutBig = interCashTransfers.filter(t => t.cashType === 'big' && t.transactionType === 'out' && t.date === d).reduce((s, t) => s + t.amount, 0);
-    const dayTransferOutSmall = interCashTransfers.filter(t => t.cashType === 'small' && t.transactionType === 'out' && t.date === d).reduce((s, t) => s + t.amount, 0);
+    const dayTransferOutBig = interCashTransfers.filter(t => t.cashType === 'big' && t.transactionType === 'expense' && t.date === d).reduce((s, t) => s + t.amount, 0);
+    const dayTransferOutSmall = interCashTransfers.filter(t => t.cashType === 'small' && t.transactionType === 'expense' && t.date === d).reduce((s, t) => s + t.amount, 0);
 
     // Employee Advances (Credit/Expense)
     const dayAdvancesBig = employeeTransfers.filter(a => a.cash_type === 'big' && a.advance_date === d).reduce((s, a) => s + a.advance_amount, 0);
