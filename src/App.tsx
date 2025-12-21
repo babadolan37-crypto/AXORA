@@ -410,6 +410,8 @@ function App() {
             />
           )}
           {activeTab === 'admin' && <AdminDashboard />}
+          {activeTab === 'roles' && <AdminDashboard initialTab="users" />}
+          {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
           {activeTab === 'notifications' && <NotificationSheet />}
           {activeTab === 'settings' && (
             <SettingsSheet

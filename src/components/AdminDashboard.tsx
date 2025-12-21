@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useAdminData } from '../hooks/useAdminData';
 import { Users, Shield, Activity, RefreshCw } from 'lucide-react';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'logs' }) {
   const { users, auditLogs, loading, error, refresh, updateUserRole } = useAdminData();
-  const [activeTab, setActiveTab] = useState<'users' | 'logs'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'logs'>(initialTab);
 
   if (loading) {
     return (
