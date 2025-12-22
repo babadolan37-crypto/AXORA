@@ -77,20 +77,30 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         if (data.user) {
           // If login with code is enabled, verify membership
           if (loginWithCode && loginCompanyCode) {
+             console.log('Checking company membership for:', loginCompanyCode);
+             
              // Because of RLS, we can only select the company if we are a member of it
              const { data: companyData, error: companyError } = await supabase
                .from('companies')
-               .select('code')
+               .select('code, name')
                .eq('code', loginCompanyCode.trim())
                .single();
              
              if (companyError || !companyData) {
+               console.error('Company verification failed:', companyError);
                // If validation fails, sign out immediately
                await supabase.auth.signOut();
-               setError('Anda tidak terdaftar di perusahaan dengan kode tersebut, atau kode salah.');
+               
+               if (companyError?.code === 'PGRST116') {
+                  setError('Kode perusahaan salah atau Anda bukan anggota perusahaan tersebut.');
+               } else {
+                  setError('Gagal memverifikasi kode perusahaan. Pastikan kode benar.');
+               }
                setLoading(false);
                return;
              }
+             
+             console.log('Company verified:', companyData);
           }
 
           setMessage('Login berhasil! Selamat datang kembali...');
@@ -141,18 +151,25 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         if (signUpError) throw signUpError;
 
         if (data.user) {
+          // Check if session exists (auto-confirm enabled)
+          if (!data.session) {
+             setMessage('Registrasi berhasil! Silakan cek email Anda untuk konfirmasi akun sebelum login.');
+             setLoading(false);
+             return;
+          }
+
           // 2. Setup Company / Profile based on Mode
           if (registerMode === 'individual') {
              // Create "Personal" Company
              const { data: res, error: rpcError } = await supabase.rpc('create_new_company', {
               input_name: `Pribadi - ${name.trim()}`,
-              input_code: 'PERSONAL-' + Math.floor(Math.random() * 10000), // Dummy code
+              input_code: 'PERSONAL-' + Math.floor(Math.random() * 100000) + '-' + Date.now().toString().slice(-4), // Unique code
               user_name: name.trim()
             });
             
             if (rpcError || !res.success) {
               console.error('Create Personal Company Error:', rpcError || res);
-              throw new Error(res?.message || 'Gagal membuat akun. Hubungi support.');
+              // Don't throw, just warn
             }
           } else if (registerMode === 'company_create') {
             const { data: res, error: rpcError } = await supabase.rpc('create_new_company', {
@@ -163,7 +180,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             
             if (rpcError || !res.success) {
               console.error('Create Company Error:', rpcError || res);
-              throw new Error(res?.message || 'Gagal membuat perusahaan. Hubungi support.');
+              throw new Error(res?.message || 'Gagal membuat perusahaan. Kode mungkin sudah digunakan.');
             }
           } else if (registerMode === 'company_join') {
             const { data: res, error: rpcError } = await supabase.rpc('join_company', {
@@ -173,7 +190,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
             if (rpcError || !res.success) {
               console.error('Join Company Error:', rpcError || res);
-              throw new Error(res?.message || 'Gagal bergabung. Periksa Kode Perusahaan Anda.');
+              throw new Error(res?.message || 'Gagal bergabung. Kode perusahaan tidak ditemukan.');
             }
           }
 
