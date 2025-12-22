@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
+import { supabase } from '../lib/supabase';
 
 interface SettingsSheetProps {
   incomeSources: string[];
