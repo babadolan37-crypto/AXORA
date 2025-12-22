@@ -1,7 +1,7 @@
 {
-  "name": "Babadolan - Pencatatan Keuangan",
-  "short_name": "Babadolan",
-  "description": "Aplikasi Pencatatan Keuangan Perusahaan",
+  "name": "Wealthify - Pencatatan Keuangan",
+  "short_name": "Wealthify",
+  "description": "Wealthify - Aplikasi Pencatatan Keuangan Perusahaan",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

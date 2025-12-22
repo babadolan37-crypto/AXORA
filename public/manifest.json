@@ -1,7 +1,7 @@
 {
-  "name": "Babadolan - Sistem Keuangan PT",
-  "short_name": "Babadolan",
-  "description": "Sistem Pencatatan Keuangan & Laporan PT",
+  "name": "Wealthify - Sistem Keuangan PT",
+  "short_name": "Wealthify",
+  "description": "Wealthify - Sistem Pencatatan Keuangan & Laporan PT",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

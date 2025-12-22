@@ -464,105 +464,29 @@ export function SettingsSheet({
         </div>
       </div>
 
-      {/* DANGER ZONE - Reset All Data */}
       {onResetAllData && (
-        <div className="bg-gradient-to-r from-red-900 to-red-800 border-4 border-red-600 rounded-lg overflow-hidden">
-          <div className="bg-red-950 px-6 py-4 border-b-4 border-red-600">
-            <div className="flex items-center gap-3 text-white">
-              <Trash2 size={24} />
-              <h3 className="text-lg">⚠️ DANGER ZONE</h3>
-            </div>
-          </div>
-
-          <div className="p-6 space-y-4">
-            <div className="bg-white bg-opacity-10 border border-red-400 rounded-lg p-4">
-              <h4 className="text-white mb-2">Factory Reset - Hapus Semua Data</h4>
-              <p className="text-sm text-red-100 mb-4">
-                Tombol ini akan menghapus <strong>SEMUA DATA</strong> termasuk:
-              </p>
-              <ul className="text-sm text-red-100 space-y-2 mb-4">
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Semua transaksi pemasukan dan pengeluaran</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Semua data utang dan piutang</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Pengaturan kategori, sumber, dan metode pembayaran (kembali ke default)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Daftar karyawan</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Saldo kas dan riwayat transaksi kas</span>
-                </li>
-              </ul>
-              <div className="bg-yellow-900 bg-opacity-50 border border-yellow-400 rounded p-3 mb-4">
-                <p className="text-xs text-yellow-100">
-                  <strong>⚠️ PERINGATAN:</strong> Tindakan ini <strong>TIDAK DAPAT DIBATALKAN</strong>. 
-                  Pastikan Anda sudah <strong>EXPORT DATA</strong> jika diperlukan sebelum melanjutkan!
-                </p>
-              </div>
-              
-              {/* Instructions for reset */}
-              <div className="bg-red-900 bg-opacity-50 border border-red-400 rounded p-3">
-                <p className="text-xs text-red-100">
-                  <strong>📝 Cara Reset:</strong>
-                </p>
-                <ol className="text-xs text-red-100 mt-2 space-y-1 ml-4">
-                  <li>1. Klik tombol merah di bawah</li>
-                  <li>2. Konfirmasi 2x dengan klik OK</li>
-                  <li>3. Semua data langsung terhapus!</li>
-                </ol>
-              </div>
-            </div>
-
-            <button
-              onClick={async () => {
-                // Double confirmation - NO TEXT INPUT
-                if (!window.confirm(
-                  '⚠️ PERINGATAN!\n\n' +
-                  'Anda akan menghapus SEMUA DATA di aplikasi ini!\n\n' +
-                  'Apakah Anda yakin ingin melanjutkan?'
-                )) return;
-
-                if (!window.confirm(
-                  '⚠️ KONFIRMASI TERAKHIR!\n\n' +
-                  'Data yang dihapus TIDAK DAPAT dikembalikan!\n\n' +
-                  'Klik OK untuk HAPUS SEMUA DATA sekarang!'
-                )) return;
-
-                // Execute reset
-                try {
-                  const success = await onResetAllData();
-                  
-                  if (success) {
-                    alert(
-                      '✅ RESET BERHASIL!\n\n' +
-                      'Semua data telah dihapus.\n' +
-                      'Aplikasi kembali ke kondisi awal.\n\n' +
-                      'Halaman akan di-refresh...'
-                    );
-                    setTimeout(() => window.location.reload(), 500);
-                  } else {
-                    alert('❌ Reset gagal. Silakan coba lagi.');
-                  }
-                } catch (error) {
-                  console.error('Reset error:', error);
-                  alert('❌ Gagal mereset data: ' + (error as Error).message);
+        <div className="border border-red-500 rounded-lg p-4">
+          <button
+            onClick={async () => {
+              if (!window.confirm('Anda akan menghapus semua data. Lanjutkan?')) return;
+              if (!window.confirm('Konfirmasi terakhir. Data tidak dapat dikembalikan. Hapus sekarang?')) return;
+              try {
+                const success = await onResetAllData();
+                if (success) {
+                  alert('Reset berhasil. Halaman akan di-refresh.');
+                  setTimeout(() => window.location.reload(), 500);
+                } else {
+                  alert('Reset gagal. Silakan coba lagi.');
                 }
-              }}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-lg transition-colors flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-            >
-              <Trash2 size={24} />
-              <span className="text-lg">🗑️ RESET SEMUA DATA (FACTORY RESET)</span>
-            </button>
-          </div>
+              } catch (error) {
+                alert('Gagal mereset data.');
+              }
+            }}
+            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg flex items-center justify-center gap-2"
+          >
+            <Trash2 size={20} />
+            Reset Semua Data
+          </button>
         </div>
       )}
 
