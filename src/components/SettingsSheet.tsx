@@ -72,6 +72,43 @@ export function SettingsSheet({
     fetchCompany();
   }, []);
 
+  // Switch Company Logic
+  const [isSwitchingCompany, setIsSwitchingCompany] = useState(false);
+  const [switchCompanyCode, setSwitchCompanyCode] = useState('');
+  
+  const handleSwitchCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!switchCompanyCode.trim()) return;
+    
+    if (!confirm(`Apakah Anda yakin ingin bergabung ke perusahaan dengan kode "${switchCompanyCode}"? Akses Anda ke perusahaan saat ini akan dicabut.`)) {
+      return;
+    }
+
+    setIsSwitchingCompany(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      // Call join_company RPC
+      const { data: res, error } = await supabase.rpc('join_company', {
+        input_code: switchCompanyCode.trim(),
+        user_name: user.user_metadata.name || 'User'
+      });
+
+      if (error) throw error;
+      if (!res.success) throw new Error(res.message);
+
+      alert('Berhasil bergabung ke perusahaan baru! Halaman akan dimuat ulang.');
+      window.location.reload();
+
+    } catch (err: any) {
+      console.error('Switch company error:', err);
+      alert('Gagal bergabung: ' + (err.message || 'Kode tidak ditemukan atau terjadi kesalahan.'));
+    } finally {
+      setIsSwitchingCompany(false);
+    }
+  };
+
   // Cash balance settings
   const { balances, setBalance } = useCashManagement();
   const [bigCashBalance, setBigCashBalance] = useState('');
@@ -194,6 +231,82 @@ export function SettingsSheet({
         <div>
           <h2>Pengaturan</h2>
           <p className="text-sm text-gray-600">Kelola kategori dan pengaturan kas perusahaan</p>
+        </div>
+      </div>
+
+      {/* Company Profile Section - NEW */}
+      <div className="bg-white border-2 border-indigo-100 rounded-xl p-6 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5">
+          <Building2 size={120} className="text-indigo-600" />
+        </div>
+        
+        <div className="relative z-10">
+           <div className="flex items-center gap-3 mb-6">
+             <div className="bg-indigo-100 p-2 rounded-lg">
+               <Building2 className="text-indigo-600" size={24} />
+             </div>
+             <div>
+               <h3 className="text-lg font-bold text-gray-900">
+                 {companyInfo ? companyInfo.name : 'Memuat Profil Perusahaan...'}
+               </h3>
+               {companyInfo && (
+                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    companyInfo.role === 'owner' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                 }`}>
+                   {companyInfo.role === 'owner' ? 'Pemilik / Owner' : 'Staff / Karyawan'}
+                 </span>
+               )}
+             </div>
+           </div>
+           
+           {companyInfo && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Access Code Display */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Kode Akses Perusahaan</p>
+                  <div className="flex items-center gap-3">
+                    <code className="text-2xl font-mono font-bold text-gray-900 tracking-widest">{companyInfo.code}</code>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(companyInfo.code);
+                        alert('Kode perusahaan disalin!');
+                      }}
+                      className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                      title="Salin Kode"
+                    >
+                      <Shield size={16} className="text-gray-600" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Bagikan kode ini kepada karyawan Anda agar mereka dapat bergabung.
+                  </p>
+                </div>
+
+                {/* Switch Company Form */}
+                <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                  <p className="text-xs text-indigo-800 uppercase tracking-wider mb-2 font-semibold">Pindah / Gabung Perusahaan Lain</p>
+                  <form onSubmit={handleSwitchCompany} className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={switchCompanyCode}
+                      onChange={(e) => setSwitchCompanyCode(e.target.value.toUpperCase())}
+                      placeholder="Masukkan Kode Baru"
+                      className="flex-1 px-3 py-2 text-sm border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono uppercase"
+                    />
+                    <button 
+                      type="submit"
+                      disabled={isSwitchingCompany || !switchCompanyCode}
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+                    >
+                      {isSwitchingCompany ? '...' : 'Gabung'}
+                    </button>
+                  </form>
+                  <p className="text-[10px] text-indigo-600 mt-2 leading-tight">
+                    ⚠️ Pindah perusahaan akan mengubah akses data Anda ke perusahaan baru.
+                  </p>
+                </div>
+             </div>
+           )}
         </div>
       </div>
 

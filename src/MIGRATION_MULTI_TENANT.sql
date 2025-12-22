@@ -87,9 +87,13 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'message', 'Kode Perusahaan tidak ditemukan');
   END IF;
 
-  -- Create Profile
+  -- Create or Update Profile
   INSERT INTO profiles (id, full_name, company_id, role)
-  VALUES (auth.uid(), user_name, target_company_id, 'staff');
+  VALUES (auth.uid(), user_name, target_company_id, 'staff')
+  ON CONFLICT (id) DO UPDATE
+  SET company_id = EXCLUDED.company_id,
+      role = 'staff',
+      updated_at = NOW();
 
   RETURN jsonb_build_object('success', true, 'company_id', target_company_id);
 END;
