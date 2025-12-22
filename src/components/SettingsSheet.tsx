@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building2 } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 import { supabase } from '../lib/supabase';
@@ -35,6 +35,42 @@ export function SettingsSheet({
   const [newExpenseCategory, setNewExpenseCategory] = useState('');
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [newEmployee, setNewEmployee] = useState('');
+  
+  // Company Info State
+  const [companyInfo, setCompanyInfo] = useState<{name: string, code: string, role: string} | null>(null);
+
+  // Load Company Info
+  useEffect(() => {
+    const fetchCompany = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Note: This query depends on the foreign key relationship between profiles and companies
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          role,
+          companies (
+            name,
+            code
+          )
+        `)
+        .eq('id', user.id)
+        .single();
+      
+      if (data && data.companies) {
+        // @ts-ignore - Supabase types might not be fully generated yet
+        const company = Array.isArray(data.companies) ? data.companies[0] : data.companies;
+        setCompanyInfo({
+          name: company.name,
+          code: company.code,
+          role: data.role
+        });
+      }
+    };
+    
+    fetchCompany();
+  }, []);
 
   // Cash balance settings
   const { balances, setBalance } = useCashManagement();
