@@ -1,5 +1,6 @@
 import React from 'react';
 import { createRoot } from "react-dom/client";
+// @ts-ignore
 import { Analytics } from "@vercel/analytics/react";
 import App from "./App.tsx";
 import "./index.css";
