@@ -78,7 +78,7 @@ export function useScheduledTransfer() {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

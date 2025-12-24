@@ -54,7 +54,7 @@ export function useBudget(incomeEntries: IncomeEntry[], expenseEntries: ExpenseE
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setBudgets([data, ...budgets]);

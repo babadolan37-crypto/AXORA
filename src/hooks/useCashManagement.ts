@@ -217,7 +217,7 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -288,7 +288,7 @@ export function useCashManagement() {
         .eq('id', balance.id)
         .eq('user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
