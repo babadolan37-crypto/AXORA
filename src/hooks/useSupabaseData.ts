@@ -33,7 +33,7 @@ export function useSupabaseData() {
           .from('profiles')
           .select('company_id')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         setCompanyId(profile?.company_id || null);
       } else {
         setCompanyId(null);
@@ -117,7 +117,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('income_sources')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -125,7 +125,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('income_sources')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -177,7 +177,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('expense_categories')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -185,7 +185,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('expense_categories')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -237,7 +237,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('payment_methods')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -245,7 +245,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('payment_methods')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -297,15 +297,15 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('employees')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
-      if (error && error.code === 'PGRST204') {
+      if (!data && !error) {
         const userRes = await supabase
           .from('user_settings')
           .select('employees')
           .eq('user_id', user?.id)
-          .single();
+          .maybeSingle();
         data = userRes.data;
         error = userRes.error;
       }
@@ -314,7 +314,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('employees')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }

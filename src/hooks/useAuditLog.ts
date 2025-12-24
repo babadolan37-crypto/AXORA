@@ -25,7 +25,7 @@ export function useAuditLog() {
         .from('profiles')
         .select('full_name, role, company_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       const { error } = await supabase
         .from('audit_logs')
