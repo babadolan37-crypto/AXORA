@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AuthForm } from './components/AuthForm';
 import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
 import { DebtSheet } from './components/DebtSheet';
-import { SettingsSheet } from './components/SettingsSheet';
+// import { SettingsSheet } from './components/SettingsSheet';
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
+
+// Lazy load SettingsSheet to prevent startup crashes
+const SettingsSheet = lazy(() => import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet })));
 import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
 import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
 import { BudgetSheet } from './components/BudgetSheet';
@@ -303,19 +306,21 @@ function App() {
           {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
           {activeTab === 'notifications' && <NotificationSheet />}
           {activeTab === 'settings' && (
-            <SettingsSheet
-              incomeSources={incomeSources}
-              expenseCategories={expenseCategories}
-              paymentMethods={paymentMethods}
-              employees={employees}
-              onUpdateIncomeSources={handleUpdateIncomeSources}
-              onUpdateExpenseCategories={handleUpdateExpenseCategories}
-              onUpdatePaymentMethods={handleUpdatePaymentMethods}
-              onUpdateEmployees={saveEmployees}
-              onResetAllData={resetAllData}
-              onNavigateToRoles={() => setActiveTab('roles')}
-              onNavigateToAudit={() => setActiveTab('audit')}
-            />
+            <Suspense fallback={<div className="p-8 text-center flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>}>
+              <SettingsSheet
+                incomeSources={incomeSources}
+                expenseCategories={expenseCategories}
+                paymentMethods={paymentMethods}
+                employees={employees}
+                onUpdateIncomeSources={handleUpdateIncomeSources}
+                onUpdateExpenseCategories={handleUpdateExpenseCategories}
+                onUpdatePaymentMethods={handleUpdatePaymentMethods}
+                onUpdateEmployees={saveEmployees}
+                onResetAllData={resetAllData}
+                onNavigateToRoles={() => setActiveTab('roles')}
+                onNavigateToAudit={() => setActiveTab('audit')}
+              />
+            </Suspense>
           )}
         </div>
       </div>
