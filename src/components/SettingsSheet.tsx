@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building, Copy, RefreshCw, AlertCircle } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 import { supabase } from '../lib/supabase';
@@ -36,28 +36,118 @@ export function SettingsSheet({
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [newEmployee, setNewEmployee] = useState('');
   const [role, setRole] = useState<string | null>(null);
+  const [company, setCompany] = useState<{name: string, code: string} | null>(null);
+  const [loadingCompany, setLoadingCompany] = useState(false);
+  const [createCompanyLoading, setCreateCompanyLoading] = useState(false);
+
   const canEditSettings = role === null || role === 'owner' || role === 'admin';
 
   useEffect(() => {
-    const fetchRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setRole(null);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) {
-        setRole(null);
-        return;
-      }
-      setRole(data?.role || null);
-    };
+    fetchCompany();
     fetchRole();
   }, []);
+
+  const fetchRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setRole(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (error) {
+      setRole(null);
+      return;
+    }
+    setRole(data?.role || null);
+  };
+
+  const fetchCompany = async () => {
+    setLoadingCompany(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (profile?.company_id) {
+        const { data: comp } = await supabase
+          .from('companies')
+          .select('name, code')
+          .eq('id', profile.company_id)
+          .maybeSingle();
+        setCompany(comp);
+      } else {
+        setCompany(null);
+      }
+    } catch (error) {
+      console.error('Error fetching company:', error);
+    } finally {
+      setLoadingCompany(false);
+    }
+  };
+
+  const handleCreateDefaultCompany = async () => {
+    if (!confirm('Perusahaan tidak ditemukan. Buat perusahaan baru secara otomatis?')) return;
+    
+    setCreateCompanyLoading(true);
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not found');
+
+        // Create company
+        const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+        const name = "Perusahaan Saya"; // Default name
+        
+        const { data: newCompany, error: createError } = await supabase
+            .from('companies')
+            .insert({ name, code })
+            .select()
+            .single();
+            
+        if (createError) throw createError;
+        
+        // Link to profile
+        await supabase
+            .from('profiles')
+            .upsert({
+                id: user.id,
+                company_id: newCompany.id,
+                role: 'owner',
+                full_name: user.email?.split('@')[0] || 'Admin',
+                email: user.email
+            });
+            
+        // Init settings
+        await supabase
+            .from('company_settings')
+            .upsert({ company_id: newCompany.id });
+            
+        alert('Perusahaan berhasil dibuat!');
+        fetchCompany();
+        // Reload page to ensure all hooks pick up the new company
+        window.location.reload();
+        
+    } catch (e: any) {
+        alert('Gagal membuat perusahaan: ' + e.message);
+    } finally {
+        setCreateCompanyLoading(false);
+    }
+  };
+
+  const copyCode = () => {
+    if (company?.code) {
+        navigator.clipboard.writeText(company.code);
+        alert('Kode perusahaan disalin!');
+    }
+  };
 
   // Cash balance settings
   const { balances, setBalance } = useCashManagement();
@@ -181,6 +271,70 @@ export function SettingsSheet({
         <div>
           <h2>Pengaturan</h2>
           <p className="text-sm text-gray-600">Kelola kategori dan pengaturan kas perusahaan</p>
+        </div>
+      </div>
+
+      {/* Company Profile - NEW SECTION */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
+          <div className="flex items-center gap-3 text-white">
+            <Building size={24} />
+            <h3 className="text-lg">Profil Perusahaan</h3>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          {loadingCompany ? (
+            <div className="flex items-center gap-2 text-gray-500">
+              <RefreshCw className="animate-spin" size={16} />
+              Memuat data perusahaan...
+            </div>
+          ) : company ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Nama Perusahaan</label>
+                <div className="text-lg font-medium text-gray-900">{company.name}</div>
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-500 mb-1">Kode Perusahaan (untuk Mengundang Tim)</label>
+                <div className="flex items-center gap-2">
+                  <div className="bg-gray-100 px-4 py-2 rounded-lg font-mono text-lg font-bold text-blue-600 tracking-wider">
+                    {company.code}
+                  </div>
+                  <button
+                    onClick={copyCode}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Salin Kode"
+                  >
+                    <Copy size={20} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Bagikan kode ini kepada karyawan atau tim Anda saat mereka mendaftar (pilih "Gabung Perusahaan").
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="text-red-600 shrink-0" size={20} />
+                <div>
+                  <h4 className="text-red-800 font-medium mb-1">Perusahaan Tidak Ditemukan</h4>
+                  <p className="text-sm text-red-600 mb-3">
+                    Akun Anda belum terhubung dengan perusahaan manapun. Data mungkin tidak tersimpan dengan benar.
+                  </p>
+                  <button
+                    onClick={handleCreateDefaultCompany}
+                    disabled={createCompanyLoading}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {createCompanyLoading ? 'Memproses...' : 'Buat Perusahaan Baru'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
