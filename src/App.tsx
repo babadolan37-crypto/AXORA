@@ -187,7 +187,6 @@ function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-20 lg:ml-64 print:ml-0">
-        <Analytics />
         
       {/* Offline Banner */}
       {isOffline && (
