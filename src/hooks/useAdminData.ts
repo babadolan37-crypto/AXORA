@@ -8,9 +8,24 @@ export function useAdminData() {
   const [scheduledTransfers, setScheduledTransfers] = useState<ScheduledTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAdminData();
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setCompanyId(null);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+      setCompanyId(profile?.company_id || null);
+      await fetchAdminData();
+    };
+    init();
   }, []);
 
   async function fetchAdminData() {
@@ -18,25 +33,98 @@ export function useAdminData() {
       setLoading(true);
       setError(null);
 
-      // Fetch Users
-      const { data: usersData, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setUsers([]);
+        setAuditLogs([]);
+        return;
+      }
+
+      // Resolve company_id if not already set
+      let cid = companyId;
+      if (!cid) {
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single();
+        cid = myProfile?.company_id || null;
+        setCompanyId(cid);
+      }
+
+      // Fetch Users (company members) using profiles table
+      let usersData: any[] | null = null;
+      let usersError: any = null;
+      if (cid) {
+        const res = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('company_id', cid)
+          .order('created_at', { ascending: false });
+        usersData = res.data || [];
+        usersError = res.error || null;
+      } else {
+        // No company: show only current user profile
+        const res = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        usersData = res.data ? [res.data] : [];
+        usersError = res.error || null;
+      }
 
       if (usersError) throw usersError;
 
       // Fetch Audit Logs (Limit 100 recent)
-      const { data: logsData, error: logsError } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      let logsData: any[] = [];
+      let logsError: any = null;
+      if (cid) {
+        const res = await supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('company_id', cid)
+          .order('created_at', { ascending: false })
+          .limit(100);
+        logsData = res.data || [];
+        logsError = res.error || null;
+        // Fallback if audit_logs doesn't have company_id
+        if (logsError && logsError.code === 'PGRST204') {
+          const ownRes = await supabase
+            .from('audit_logs')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+          logsData = ownRes.data || [];
+          logsError = ownRes.error || null;
+        }
+      } else {
+        const ownRes = await supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(100);
+        logsData = ownRes.data || [];
+        logsError = ownRes.error || null;
+      }
 
       if (logsError) throw logsError;
 
-      setUsers(usersData || []);
-      setAuditLogs(logsData || []);
+      const mappedUsers = (usersData || []).map((u: any) => ({
+        id: u.id,
+        user_id: u.id,
+        role: u.role,
+        full_name: u.full_name || u.name || null,
+        email: u.email || null,
+        phone: u.phone || null,
+        created_at: u.created_at,
+        updated_at: u.updated_at
+      })) as UserProfile[];
+
+      setUsers(mappedUsers);
+      setAuditLogs((logsData || []) as AuditLog[]);
 
     } catch (err: any) {
       console.error('Error fetching admin data:', err);
@@ -49,9 +137,9 @@ export function useAdminData() {
   async function updateUserRole(userId: string, newRole: string) {
     try {
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({ role: newRole, updated_at: new Date().toISOString() })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) throw error;
       
@@ -59,7 +147,7 @@ export function useAdminData() {
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole as any } : u));
       
       // Log this action
-      await logAction('UPDATE_ROLE', 'user_profiles', userId, { role: newRole });
+      await logAction('UPDATE_ROLE', 'profiles', userId, { role: newRole });
       
       return { success: true };
     } catch (err: any) {
@@ -72,9 +160,17 @@ export function useAdminData() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id, role, full_name')
+        .eq('id', user.id)
+        .single();
+
       await supabase.from('audit_logs').insert({
         user_id: user.id,
-        user_name: user.user_metadata?.full_name || user.email,
+        company_id: profile?.company_id || null,
+        user_name: profile?.full_name || user.email,
+        user_role: profile?.role || null,
         action,
         entity_type: entityType,
         entity_id: entityId,

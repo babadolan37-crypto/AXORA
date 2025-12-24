@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building2 } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 import { supabase } from '../lib/supabase';
@@ -35,79 +35,29 @@ export function SettingsSheet({
   const [newExpenseCategory, setNewExpenseCategory] = useState('');
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [newEmployee, setNewEmployee] = useState('');
-  
-  // Company Info State
-  const [companyInfo, setCompanyInfo] = useState<{name: string, code: string, role: string} | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const canEditSettings = role === null || role === 'owner' || role === 'admin';
 
-  // Load Company Info
   useEffect(() => {
-    const fetchCompany = async () => {
+    const fetchRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Note: This query depends on the foreign key relationship between profiles and companies
+      if (!user) {
+        setRole(null);
+        return;
+      }
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          role,
-          companies (
-            name,
-            code
-          )
-        `)
+        .select('role')
         .eq('id', user.id)
         .single();
-      
-      if (data && data.companies) {
-        // @ts-ignore - Supabase types might not be fully generated yet
-        const company = Array.isArray(data.companies) ? data.companies[0] : data.companies;
-        setCompanyInfo({
-          name: company.name,
-          code: company.code,
-          role: data.role
-        });
+      if (error) {
+        setRole(null);
+        return;
       }
+      setRole(data?.role || null);
     };
-    
-    fetchCompany();
+    fetchRole();
   }, []);
-
-  // Switch Company Logic
-  const [isSwitchingCompany, setIsSwitchingCompany] = useState(false);
-  const [switchCompanyCode, setSwitchCompanyCode] = useState('');
-  
-  const handleSwitchCompany = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!switchCompanyCode.trim()) return;
-    
-    if (!confirm(`Apakah Anda yakin ingin bergabung ke perusahaan dengan kode "${switchCompanyCode}"? Akses Anda ke perusahaan saat ini akan dicabut.`)) {
-      return;
-    }
-
-    setIsSwitchingCompany(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      // Call join_company RPC
-      const { data: res, error } = await supabase.rpc('join_company', {
-        input_code: switchCompanyCode.trim(),
-        user_name: user.user_metadata.name || 'User'
-      });
-
-      if (error) throw error;
-      if (!res.success) throw new Error(res.message);
-
-      alert('Berhasil bergabung ke perusahaan baru! Halaman akan dimuat ulang.');
-      window.location.reload();
-
-    } catch (err: any) {
-      console.error('Switch company error:', err);
-      alert('Gagal bergabung: ' + (err.message || 'Kode tidak ditemukan atau terjadi kesalahan.'));
-    } finally {
-      setIsSwitchingCompany(false);
-    }
-  };
 
   // Cash balance settings
   const { balances, setBalance } = useCashManagement();
@@ -234,82 +184,6 @@ export function SettingsSheet({
         </div>
       </div>
 
-      {/* Company Profile Section - NEW */}
-      <div className="bg-white border-2 border-indigo-100 rounded-xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5">
-          <Building2 size={120} className="text-indigo-600" />
-        </div>
-        
-        <div className="relative z-10">
-           <div className="flex items-center gap-3 mb-6">
-             <div className="bg-indigo-100 p-2 rounded-lg">
-               <Building2 className="text-indigo-600" size={24} />
-             </div>
-             <div>
-               <h3 className="text-lg font-bold text-gray-900">
-                 {companyInfo ? companyInfo.name : 'Memuat Profil Perusahaan...'}
-               </h3>
-               {companyInfo && (
-                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    companyInfo.role === 'owner' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                 }`}>
-                   {companyInfo.role === 'owner' ? 'Pemilik / Owner' : 'Staff / Karyawan'}
-                 </span>
-               )}
-             </div>
-           </div>
-           
-           {companyInfo && (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Access Code Display */}
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Kode Akses Perusahaan</p>
-                  <div className="flex items-center gap-3">
-                    <code className="text-2xl font-mono font-bold text-gray-900 tracking-widest">{companyInfo.code}</code>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(companyInfo.code);
-                        alert('Kode perusahaan disalin!');
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                      title="Salin Kode"
-                    >
-                      <Shield size={16} className="text-gray-600" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Bagikan kode ini kepada karyawan Anda agar mereka dapat bergabung.
-                  </p>
-                </div>
-
-                {/* Switch Company Form */}
-                <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                  <p className="text-xs text-indigo-800 uppercase tracking-wider mb-2 font-semibold">Pindah / Gabung Perusahaan Lain</p>
-                  <form onSubmit={handleSwitchCompany} className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={switchCompanyCode}
-                      onChange={(e) => setSwitchCompanyCode(e.target.value.toUpperCase())}
-                      placeholder="Masukkan Kode Baru"
-                      className="flex-1 px-3 py-2 text-sm border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono uppercase"
-                    />
-                    <button 
-                      type="submit"
-                      disabled={isSwitchingCompany || !switchCompanyCode}
-                      className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
-                    >
-                      {isSwitchingCompany ? '...' : 'Gabung'}
-                    </button>
-                  </form>
-                  <p className="text-[10px] text-indigo-600 mt-2 leading-tight">
-                    ⚠️ Pindah perusahaan akan mengubah akses data Anda ke perusahaan baru.
-                  </p>
-                </div>
-             </div>
-           )}
-        </div>
-      </div>
-
       {/* Cash Balance Settings - NEW SECTION */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
@@ -320,6 +194,14 @@ export function SettingsSheet({
         </div>
 
         <form onSubmit={handleSaveCashBalances} className="p-6 space-y-6">
+          {!canEditSettings && (
+            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                <Lock size={12} className="inline mr-1" />
+                Hanya Owner/Admin yang dapat mengubah saldo awal dan pengaturan.
+              </p>
+            </div>
+          )}
           {/* Saldo Awal Kas Besar */}
           <div>
             <label className="block text-gray-900 mb-2">
@@ -334,7 +216,8 @@ export function SettingsSheet({
                 value={bigCashBalance}
                 onChange={(e) => setBigCashBalance(formatNumber(e.target.value))}
                 placeholder="10000000"
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                disabled={!canEditSettings}
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
               />
             </div>
             <p className="text-sm text-gray-600 mt-2">
@@ -361,7 +244,8 @@ export function SettingsSheet({
                 value={smallCashBalance}
                 onChange={(e) => setSmallCashBalance(formatNumber(e.target.value))}
                 placeholder="2000000"
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                disabled={!canEditSettings}
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
               />
             </div>
             <p className="text-sm text-gray-600 mt-2">
@@ -388,7 +272,8 @@ export function SettingsSheet({
                 value={lowBalanceThreshold}
                 onChange={(e) => setLowBalanceThreshold(formatNumber(e.target.value))}
                 placeholder="1000000"
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                disabled={!canEditSettings}
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 disabled:bg-gray-100 disabled:text-gray-500"
               />
             </div>
             <p className="text-sm text-gray-600 mt-2">
@@ -404,7 +289,7 @@ export function SettingsSheet({
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isSavingBalance}
+            disabled={isSavingBalance || !canEditSettings}
             className="w-full bg-gray-900 text-white py-4 rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSavingBalance ? (
@@ -435,12 +320,14 @@ export function SettingsSheet({
               type="text"
               value={newIncomeSource}
               onChange={(e) => setNewIncomeSource(e.target.value)}
-              placeholder="Tambah sumber pemasukan baru..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder={canEditSettings ? "Tambah sumber pemasukan baru..." : "Hanya Admin dapat menambah"}
+              disabled={!canEditSettings}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <button
               type="submit"
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              disabled={!canEditSettings}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
             >
               <Plus size={20} />
               Tambah
@@ -455,13 +342,15 @@ export function SettingsSheet({
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <span className="text-sm">{source}</span>
-              <button
-                onClick={() => handleDeleteIncomeSource(source)}
-                className="text-red-600 hover:text-red-800 transition-colors"
-                title="Hapus"
-              >
-                <Trash2 size={18} />
-              </button>
+              {canEditSettings && (
+                <button
+                  onClick={() => handleDeleteIncomeSource(source)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           ))}
           {incomeSources.length === 0 && (
@@ -483,12 +372,14 @@ export function SettingsSheet({
               type="text"
               value={newExpenseCategory}
               onChange={(e) => setNewExpenseCategory(e.target.value)}
-              placeholder="Tambah kategori pengeluaran baru..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder={canEditSettings ? "Tambah kategori pengeluaran baru..." : "Hanya Admin dapat menambah"}
+              disabled={!canEditSettings}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <button
               type="submit"
-              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              disabled={!canEditSettings}
+              className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400"
             >
               <Plus size={20} />
               Tambah
@@ -503,13 +394,15 @@ export function SettingsSheet({
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <span className="text-sm">{category}</span>
-              <button
-                onClick={() => handleDeleteExpenseCategory(category)}
-                className="text-red-600 hover:text-red-800 transition-colors"
-                title="Hapus"
-              >
-                <Trash2 size={18} />
-              </button>
+              {canEditSettings && (
+                <button
+                  onClick={() => handleDeleteExpenseCategory(category)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           ))}
           {expenseCategories.length === 0 && (
@@ -531,12 +424,14 @@ export function SettingsSheet({
               type="text"
               value={newPaymentMethod}
               onChange={(e) => setNewPaymentMethod(e.target.value)}
-              placeholder="Tambah metode pembayaran baru..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={canEditSettings ? "Tambah metode pembayaran baru..." : "Hanya Admin dapat menambah"}
+              disabled={!canEditSettings}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <button
               type="submit"
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={!canEditSettings}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
             >
               <Plus size={20} />
               Tambah
@@ -551,13 +446,15 @@ export function SettingsSheet({
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <span className="text-sm">{method}</span>
-              <button
-                onClick={() => handleDeletePaymentMethod(method)}
-                className="text-red-600 hover:text-red-800 transition-colors"
-                title="Hapus"
-              >
-                <Trash2 size={18} />
-              </button>
+              {canEditSettings && (
+                <button
+                  onClick={() => handleDeletePaymentMethod(method)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           ))}
           {paymentMethods.length === 0 && (
@@ -579,12 +476,14 @@ export function SettingsSheet({
               type="text"
               value={newEmployee}
               onChange={(e) => setNewEmployee(e.target.value)}
-              placeholder="Tambah karyawan baru..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"
+              placeholder={canEditSettings ? "Tambah karyawan baru..." : "Hanya Admin dapat menambah"}
+              disabled={!canEditSettings}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:bg-gray-100 disabled:text-gray-500"
             />
             <button
               type="submit"
-              className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              disabled={!canEditSettings}
+              className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400"
             >
               <Plus size={20} />
               Tambah
@@ -599,13 +498,15 @@ export function SettingsSheet({
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <span className="text-sm">{employee}</span>
-              <button
-                onClick={() => handleDeleteEmployee(employee)}
-                className="text-red-600 hover:text-red-800 transition-colors"
-                title="Hapus"
-              >
-                <Trash2 size={18} />
-              </button>
+              {canEditSettings && (
+                <button
+                  onClick={() => handleDeleteEmployee(employee)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           ))}
           {employees.length === 0 && (

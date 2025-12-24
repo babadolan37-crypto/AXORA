@@ -20,17 +20,18 @@ export function useAuditLog() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get user profile for name and role
+      // Get user profile for name, role, and company
       const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('full_name, role')
-        .eq('user_id', user.id)
+        .from('profiles')
+        .select('full_name, role, company_id')
+        .eq('id', user.id)
         .single();
 
       const { error } = await supabase
         .from('audit_logs')
         .insert([{
           user_id: user.id,
+          company_id: profile?.company_id || null,
           user_name: profile?.full_name || user.email || 'Unknown',
           user_role: profile?.role || 'unknown',
           action,

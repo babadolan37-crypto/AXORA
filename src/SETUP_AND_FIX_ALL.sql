@@ -29,6 +29,38 @@ END $$;
 -- BAGIAN 1: PEMBUATAN TABEL (Jika Belum Ada)
 -- =================================================================
 
+-- Tabel companies (Perusahaan)
+CREATE TABLE IF NOT EXISTS companies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  code TEXT UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabel profiles (Profil User berbasis perusahaan)
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
+  role TEXT NOT NULL DEFAULT 'owner' CHECK (role IN ('owner', 'admin', 'manager', 'employee', 'viewer')),
+  full_name TEXT,
+  email TEXT,
+  phone TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabel company_settings (Pengaturan bersama perusahaan)
+CREATE TABLE IF NOT EXISTS company_settings (
+  company_id UUID PRIMARY KEY REFERENCES companies(id) ON DELETE CASCADE,
+  income_sources JSONB DEFAULT '["Penjualan Produk","Penjualan Jasa","Pemasukan Investasi","Pembayaran Piutang","Lainnya"]'::jsonb,
+  expense_categories JSONB DEFAULT '["Gaji Karyawan","Sewa","Bahan Baku","Listrik","Air","Internet & Telekomunikasi","Transportasi","Peralatan Kantor","Marketing","Pajak","Lainnya"]'::jsonb,
+  payment_methods JSONB DEFAULT '["Tunai","Transfer Bank","Cek","Kartu Kredit","E-Wallet"]'::jsonb,
+  employees JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Tabel user_profiles
 CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -46,6 +78,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id),
+  company_id UUID REFERENCES companies(id),
   user_name TEXT,
   user_role TEXT,
   action TEXT NOT NULL,
@@ -136,15 +169,95 @@ END $$;
 -- BAGIAN 3: SECURITY POLICIES (RLS)
 -- =================================================================
 
+-- Policy companies
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Company members can view company" ON companies;
+CREATE POLICY "Company members can view company" ON companies
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.company_id = companies.id
+    )
+  );
+DROP POLICY IF EXISTS "Users can create company" ON companies;
+CREATE POLICY "Users can create company" ON companies
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "Admins can update company" ON companies;
+CREATE POLICY "Admins can update company" ON companies
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = companies.id
+        AND p.role IN ('owner','admin')
+    )
+  );
+
+-- Policy profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own profile (profiles)" ON profiles;
+DROP POLICY IF EXISTS "Admins can view company profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile (profiles)" ON profiles;
+CREATE POLICY "Users can view own profile (profiles)" ON profiles
+  FOR SELECT USING (id = auth.uid());
+CREATE POLICY "Admins can view company profiles" ON profiles
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles me
+      WHERE me.id = auth.uid()
+        AND me.company_id = profiles.company_id
+        AND me.role IN ('owner','admin')
+    )
+  );
+CREATE POLICY "Users can update own profile (profiles)" ON profiles
+  FOR UPDATE USING (id = auth.uid());
+CREATE POLICY "Users can insert own profile (profiles)" ON profiles
+  FOR INSERT WITH CHECK (id = auth.uid());
+
+-- Policy company_settings
+ALTER TABLE company_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Company members can view settings" ON company_settings;
+DROP POLICY IF EXISTS "Admins can manage settings" ON company_settings;
+CREATE POLICY "Company members can view settings" ON company_settings
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.company_id = company_settings.company_id
+    )
+  );
+CREATE POLICY "Admins can manage settings" ON company_settings
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = company_settings.company_id
+        AND p.role IN ('owner','admin')
+    )
+  );
+
 -- Policy audit_logs
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view own logs" ON audit_logs;
 DROP POLICY IF EXISTS "Users can insert own logs" ON audit_logs;
 
-CREATE POLICY "Users can view own logs" ON audit_logs 
-    FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own logs" ON audit_logs 
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Company members can view logs" ON audit_logs;
+DROP POLICY IF EXISTS "Members can insert logs" ON audit_logs;
+CREATE POLICY "Company members can view logs" ON audit_logs
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.company_id = audit_logs.company_id
+    )
+    OR auth.uid() = user_id
+  );
+CREATE POLICY "Members can insert logs" ON audit_logs
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.company_id = audit_logs.company_id
+    )
+    OR auth.uid() = user_id
+  );
 
 -- Policy user_profiles
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -195,3 +308,10 @@ CREATE TRIGGER on_auth_user_created
 INSERT INTO public.user_profiles (user_id, role, email)
 SELECT id, 'admin', email FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;
+
+-- Seed profiles untuk user lama (sinkronisasi minimal)
+INSERT INTO public.profiles (id, role, full_name, email)
+SELECT u.id, COALESCE(up.role, 'owner'), COALESCE(up.full_name, u.email), u.email
+FROM auth.users u
+LEFT JOIN user_profiles up ON up.user_id = u.id
+ON CONFLICT (id) DO NOTHING;

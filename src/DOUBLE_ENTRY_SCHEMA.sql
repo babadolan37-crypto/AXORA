@@ -12,6 +12,7 @@
 CREATE TABLE IF NOT EXISTS accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
   
   -- Account Identity
   code VARCHAR(20) NOT NULL, -- e.g., "1101", "5101"
@@ -37,12 +38,15 @@ CREATE TABLE IF NOT EXISTS accounts (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
-  UNIQUE(user_id, code)
+  UNIQUE(user_id, code),
+  UNIQUE(company_id, code)
 );
 
 -- Index untuk performa
 CREATE INDEX idx_accounts_user_type ON accounts(user_id, type);
 CREATE INDEX idx_accounts_user_cash ON accounts(user_id, is_cash_account) WHERE is_cash_account = TRUE;
+CREATE INDEX idx_accounts_company_type ON accounts(company_id, type);
+CREATE INDEX idx_accounts_company_cash ON accounts(company_id, is_cash_account) WHERE is_cash_account = TRUE;
 
 -- ============================================
 -- 2. JOURNAL ENTRIES (Header Transaksi)
@@ -50,6 +54,7 @@ CREATE INDEX idx_accounts_user_cash ON accounts(user_id, is_cash_account) WHERE 
 CREATE TABLE IF NOT EXISTS journal_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
   
   -- Entry Metadata
   entry_number VARCHAR(50) NOT NULL, -- e.g., "JE-2025-0001"
@@ -81,7 +86,8 @@ CREATE TABLE IF NOT EXISTS journal_entries (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id),
   
-  UNIQUE(user_id, entry_number)
+  UNIQUE(user_id, entry_number),
+  UNIQUE(company_id, entry_number)
 );
 
 -- Index untuk performa
@@ -89,6 +95,9 @@ CREATE INDEX idx_journal_entries_user_date ON journal_entries(user_id, entry_dat
 CREATE INDEX idx_journal_entries_user_status ON journal_entries(user_id, status);
 CREATE INDEX idx_journal_entries_type ON journal_entries(user_id, entry_type);
 CREATE INDEX idx_journal_entries_reference ON journal_entries(reference_id) WHERE reference_id IS NOT NULL;
+CREATE INDEX idx_journal_entries_company_date ON journal_entries(company_id, entry_date DESC);
+CREATE INDEX idx_journal_entries_company_status ON journal_entries(company_id, status);
+CREATE INDEX idx_journal_entries_company_type ON journal_entries(company_id, entry_type);
 
 -- ============================================
 -- 3. JOURNAL LINES (Detail Debit/Credit)
@@ -131,6 +140,7 @@ CREATE INDEX idx_journal_lines_journal ON journal_lines(journal_entry_id);
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
   
   -- Link ke journal entry (WAJIB)
   journal_entry_id UUID NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
@@ -165,6 +175,8 @@ CREATE TABLE IF NOT EXISTS expenses (
 CREATE INDEX idx_expenses_user_date ON expenses(user_id, expense_date DESC);
 CREATE INDEX idx_expenses_category ON expenses(user_id, category);
 CREATE INDEX idx_expenses_account ON expenses(paid_from_account_id);
+CREATE INDEX idx_expenses_company_date ON expenses(company_id, expense_date DESC);
+CREATE INDEX idx_expenses_company_category ON expenses(company_id, category);
 
 -- ============================================
 -- 5. SALARIES (Metadata Gaji Karyawan - OPTIONAL)
@@ -172,6 +184,7 @@ CREATE INDEX idx_expenses_account ON expenses(paid_from_account_id);
 CREATE TABLE IF NOT EXISTS salaries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
   
   -- Link ke journal entry (WAJIB)
   journal_entry_id UUID NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
@@ -201,6 +214,8 @@ CREATE TABLE IF NOT EXISTS salaries (
 
 CREATE INDEX idx_salaries_user_date ON salaries(user_id, payment_date DESC);
 CREATE INDEX idx_salaries_employee ON salaries(user_id, employee_name);
+CREATE INDEX idx_salaries_company_date ON salaries(company_id, payment_date DESC);
+CREATE INDEX idx_salaries_company_employee ON salaries(company_id, employee_name);
 
 -- ============================================
 -- 6. CONSTRAINT: BALANCED JOURNAL ENTRIES
@@ -312,14 +327,36 @@ ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE salaries ENABLE ROW LEVEL SECURITY;
 
 -- Policies untuk accounts
+DROP POLICY IF EXISTS accounts_user_policy ON accounts;
+DROP POLICY IF EXISTS accounts_company_policy ON accounts;
 CREATE POLICY accounts_user_policy ON accounts
   FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY accounts_company_policy ON accounts
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = accounts.company_id
+    )
+  );
 
 -- Policies untuk journal_entries
+DROP POLICY IF EXISTS journal_entries_user_policy ON journal_entries;
+DROP POLICY IF EXISTS journal_entries_company_policy ON journal_entries;
 CREATE POLICY journal_entries_user_policy ON journal_entries
   FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY journal_entries_company_policy ON journal_entries
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = journal_entries.company_id
+    )
+  );
 
 -- Policies untuk journal_lines
+DROP POLICY IF EXISTS journal_lines_user_policy ON journal_lines;
+DROP POLICY IF EXISTS journal_lines_company_policy ON journal_lines;
 CREATE POLICY journal_lines_user_policy ON journal_lines
   FOR ALL USING (
     EXISTS (
@@ -328,14 +365,43 @@ CREATE POLICY journal_lines_user_policy ON journal_lines
         AND je.user_id = auth.uid()
     )
   );
+CREATE POLICY journal_lines_company_policy ON journal_lines
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM journal_entries je
+      JOIN profiles p ON p.id = auth.uid()
+      WHERE je.id = journal_entry_id
+        AND je.company_id = p.company_id
+    )
+  );
 
 -- Policies untuk expenses
+DROP POLICY IF EXISTS expenses_user_policy ON expenses;
+DROP POLICY IF EXISTS expenses_company_policy ON expenses;
 CREATE POLICY expenses_user_policy ON expenses
   FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY expenses_company_policy ON expenses
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = expenses.company_id
+    )
+  );
 
 -- Policies untuk salaries
+DROP POLICY IF EXISTS salaries_user_policy ON salaries;
+DROP POLICY IF EXISTS salaries_company_policy ON salaries;
 CREATE POLICY salaries_user_policy ON salaries
   FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY salaries_company_policy ON salaries
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid()
+        AND p.company_id = salaries.company_id
+    )
+  );
 
 -- ============================================
 -- 10. SEED DATA: Chart of Accounts Default

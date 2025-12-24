@@ -7,6 +7,7 @@ import { useAuditLog } from './useAuditLog';
 
 export function useSupabaseData() {
   const [user, setUser] = useState<User | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
@@ -22,11 +23,21 @@ export function useSupabaseData() {
   // Audit log hook
   const { logAction } = useAuditLog();
 
-  // Get current user from Supabase only
+  // Get current user and company from Supabase
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user || null);
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single();
+        setCompanyId(profile?.company_id || null);
+      } else {
+        setCompanyId(null);
+      }
     };
 
     checkAuth();
@@ -36,7 +47,7 @@ export function useSupabaseData() {
   useEffect(() => {
     if (!user) return;
     loadAllData();
-  }, [user]);
+  }, [user, companyId]);
 
   // Listen for cashBalanceUpdated event to reload entries
   useEffect(() => {
@@ -100,45 +111,84 @@ export function useSupabaseData() {
 
   // Income Sources
   const loadIncomeSources = async () => {
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('income_sources')
-      .eq('user_id', user?.id)
-      .single();
-    
+    let data, error;
+    if (companyId) {
+      const result = await supabase
+        .from('company_settings')
+        .select('income_sources')
+        .eq('company_id', companyId)
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('user_settings')
+        .select('income_sources')
+        .eq('user_id', user?.id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
     if (!error && data && data.income_sources) {
       setIncomeSources(data.income_sources);
     } else {
-      // Initialize with defaults if not exists
       setIncomeSources(DEFAULT_INCOME_SOURCES);
     }
   };
 
   const saveIncomeSources = async (sources: string[]) => {
-    // Upsert to user_settings
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ 
-        user_id: user?.id, 
-        income_sources: sources,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-    
-    if (!error) {
+    if (companyId) {
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert({
+          company_id: companyId,
+          income_sources: sources,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id'
+        });
+      if (error) {
+        console.error('Error saving company income sources:', error);
+        alert('Gagal menyimpan pengaturan perusahaan. Pastikan Anda memiliki akses Admin/Owner.');
+        return;
+      }
       setIncomeSources(sources);
+    } else {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user?.id,
+          income_sources: sources,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      if (!error) {
+        setIncomeSources(sources);
+      }
     }
   };
 
   // Expense Categories
   const loadExpenseCategories = async () => {
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('expense_categories')
-      .eq('user_id', user?.id)
-      .single();
-    
+    let data, error;
+    if (companyId) {
+      const result = await supabase
+        .from('company_settings')
+        .select('expense_categories')
+        .eq('company_id', companyId)
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('user_settings')
+        .select('expense_categories')
+        .eq('user_id', user?.id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
     if (!error && data && data.expense_categories) {
       setExpenseCategories(data.expense_categories);
     } else {
@@ -147,29 +197,58 @@ export function useSupabaseData() {
   };
 
   const saveExpenseCategories = async (categories: string[]) => {
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ 
-        user_id: user?.id, 
-        expense_categories: categories,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-    
-    if (!error) {
+    if (companyId) {
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert({
+          company_id: companyId,
+          expense_categories: categories,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id'
+        });
+      if (error) {
+        console.error('Error saving company expense categories:', error);
+        alert('Gagal menyimpan pengaturan perusahaan. Pastikan Anda memiliki akses Admin/Owner.');
+        return;
+      }
       setExpenseCategories(categories);
+    } else {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user?.id,
+          expense_categories: categories,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      if (!error) {
+        setExpenseCategories(categories);
+      }
     }
   };
 
   // Payment Methods
   const loadPaymentMethods = async () => {
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('payment_methods')
-      .eq('user_id', user?.id)
-      .single();
-    
+    let data, error;
+    if (companyId) {
+      const result = await supabase
+        .from('company_settings')
+        .select('payment_methods')
+        .eq('company_id', companyId)
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('user_settings')
+        .select('payment_methods')
+        .eq('user_id', user?.id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
     if (!error && data && data.payment_methods) {
       setPaymentMethods(data.payment_methods);
     } else {
@@ -178,29 +257,67 @@ export function useSupabaseData() {
   };
 
   const savePaymentMethods = async (methods: string[]) => {
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ 
-        user_id: user?.id, 
-        payment_methods: methods,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-    
-    if (!error) {
+    if (companyId) {
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert({
+          company_id: companyId,
+          payment_methods: methods,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id'
+        });
+      if (error) {
+        console.error('Error saving company payment methods:', error);
+        alert('Gagal menyimpan pengaturan perusahaan. Pastikan Anda memiliki akses Admin/Owner.');
+        return;
+      }
       setPaymentMethods(methods);
+    } else {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user?.id,
+          payment_methods: methods,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      if (!error) {
+        setPaymentMethods(methods);
+      }
     }
   };
 
   // Employees
   const loadEmployees = async () => {
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('employees')
-      .eq('user_id', user?.id)
-      .single();
-    
+    let data, error;
+    if (companyId) {
+      const result = await supabase
+        .from('company_settings')
+        .select('employees')
+        .eq('company_id', companyId)
+        .single();
+      data = result.data;
+      error = result.error;
+      if (error && error.code === 'PGRST204') {
+        const userRes = await supabase
+          .from('user_settings')
+          .select('employees')
+          .eq('user_id', user?.id)
+          .single();
+        data = userRes.data;
+        error = userRes.error;
+      }
+    } else {
+      const result = await supabase
+        .from('user_settings')
+        .select('employees')
+        .eq('user_id', user?.id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
     if (!error && data && data.employees) {
       setEmployees(data.employees);
     } else {
@@ -209,18 +326,53 @@ export function useSupabaseData() {
   };
 
   const saveEmployees = async (employeeList: string[]) => {
-    const { error } = await supabase
-      .from('user_settings')
-      .upsert({ 
-        user_id: user?.id, 
-        employees: employeeList,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-    
-    if (!error) {
+    if (companyId) {
+      const { error } = await supabase
+        .from('company_settings')
+        .upsert({
+          company_id: companyId,
+          employees: employeeList,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'company_id'
+        });
+      if (error) {
+        if (error.code === 'PGRST204') {
+          const { error: userError } = await supabase
+            .from('user_settings')
+            .upsert({
+              user_id: user?.id,
+              employees: employeeList,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id'
+            });
+          if (userError) {
+            console.error('Error saving fallback employees:', userError);
+            alert('Gagal menyimpan daftar karyawan.');
+            return;
+          }
+          setEmployees(employeeList);
+          return;
+        }
+        console.error('Error saving company employees:', error);
+        alert('Gagal menyimpan pengaturan perusahaan. Pastikan Anda memiliki akses Admin/Owner.');
+        return;
+      }
       setEmployees(employeeList);
+    } else {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user?.id,
+          employees: employeeList,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      if (!error) {
+        setEmployees(employeeList);
+      }
     }
   };
 
