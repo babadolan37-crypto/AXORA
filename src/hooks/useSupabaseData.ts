@@ -33,14 +33,43 @@ export function useSupabaseData() {
           .from('profiles')
           .select('company_id')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         setCompanyId(profile?.company_id || null);
       } else {
         setCompanyId(null);
+        // Clear data on logout
+        setIncomeEntries([]);
+        setExpenseEntries([]);
+        setDebtEntries([]);
       }
     };
 
     checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        setCompanyId(profile?.company_id || null);
+      } else {
+        setCompanyId(null);
+        // Clear data on logout
+        setIncomeEntries([]);
+        setExpenseEntries([]);
+        setDebtEntries([]);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Load all data

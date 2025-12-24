@@ -77,11 +77,15 @@ function App() {
 
   const handleLogout = async () => {
     if (confirm('Apakah Anda yakin ingin logout?')) {
-      // Logout dari Supabase
-      await supabase.auth.signOut();
-      
-      // Reset state
-      setUser(null);
+      try {
+        // Logout dari Supabase
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error('Error logging out:', error);
+      } finally {
+        // Reset state
+        setUser(null);
+      }
     }
   };
 
