@@ -93,7 +93,7 @@ export function useRecurring() {
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       setRecurring([...recurring, data]);

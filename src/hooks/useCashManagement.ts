@@ -217,7 +217,7 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
@@ -288,7 +288,7 @@ export function useCashManagement() {
         .eq('id', balance.id)
         .eq('user_id', user.id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
@@ -317,7 +317,7 @@ export function useCashManagement() {
         .eq('id', balance.id)
         .eq('user_id', user.id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
@@ -359,7 +359,7 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (debitError) {
         console.error('Error creating debit transaction:', debitError);
@@ -383,7 +383,7 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (creditError) {
         console.error('Error creating credit transaction:', creditError);

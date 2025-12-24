@@ -92,7 +92,7 @@ export function useInvoice() {
           updatedAt: now,
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       setInvoices([data, ...invoices]);
@@ -163,7 +163,7 @@ export function useInvoice() {
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       setCustomers([...customers, data]);

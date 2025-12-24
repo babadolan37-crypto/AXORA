@@ -102,7 +102,7 @@ export function useAdvancePayment() {
         .from('advance_payments')
         .insert([newAdvance])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 

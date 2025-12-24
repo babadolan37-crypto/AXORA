@@ -49,7 +49,7 @@ export function SettingsSheet({
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
       if (error) {
         setRole(null);
         return;

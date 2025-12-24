@@ -20,13 +20,15 @@ export function useUserProfile() {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (error) throw error;
-      
-      if (!data) {
-        await createDefaultProfile(user.id, user.email || '');
-        return;
+      if (error) {
+        // If profile doesn't exist, create default admin profile
+        if (error.code === 'PGRST116') {
+          await createDefaultProfile(user.id, user.email || '');
+          return;
+        }
+        throw error;
       }
 
       setProfile(mapProfileFromDb(data));
@@ -53,7 +55,7 @@ export function useUserProfile() {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 

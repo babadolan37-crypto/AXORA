@@ -82,7 +82,7 @@ export function useAssetData() {
           user_id: user.id
         })
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 

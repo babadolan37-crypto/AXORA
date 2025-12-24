@@ -182,16 +182,6 @@ CREATE POLICY "Company members can view company" ON companies
 DROP POLICY IF EXISTS "Users can create company" ON companies;
 CREATE POLICY "Users can create company" ON companies
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-DROP POLICY IF EXISTS "Admins can update company" ON companies;
-CREATE POLICY "Admins can update company" ON companies
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid()
-        AND p.company_id = companies.id
-        AND p.role IN ('owner','admin')
-    )
-  );
 
 -- Policy profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

@@ -99,7 +99,7 @@ export function CashDashboard() {
         .from('user_settings')
         .select('cash_balance_settings')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
       if (!error && data?.cash_balance_settings) {
         setSettings(data.cash_balance_settings);

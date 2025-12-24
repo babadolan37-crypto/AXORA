@@ -8,15 +8,6 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
   const [activeTab, setActiveTab] = useState<'users' | 'logs'>(initialTab);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [companyCode, setCompanyCode] = useState<string | null>(null);
-  const [companyId, setCompanyId] = useState<string | null>(null);
-  const [searchEmail, setSearchEmail] = useState('');
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [lookupError, setLookupError] = useState<string | null>(null);
-  const [lookupResult, setLookupResult] = useState<{ name: string; code: string } | null>(null);
-  const [newCompanyCode, setNewCompanyCode] = useState('');
-  const [codeUpdateLoading, setCodeUpdateLoading] = useState(false);
-  const [codeUpdateError, setCodeUpdateError] = useState<string | null>(null);
-  const [codeUpdateSuccess, setCodeUpdateSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCompany = async () => {
@@ -30,103 +21,16 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
       if (!profile?.company_id) return;
       const { data: company } = await supabase
         .from('companies')
-        .select('id, name, code')
+        .select('name, code')
         .eq('id', profile.company_id)
         .maybeSingle();
       if (company) {
-        setCompanyId(company.id || null);
         setCompanyName(company.name || null);
         setCompanyCode(company.code || null);
       }
     };
     loadCompany();
   }, []);
-
-  const randomCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) result += chars[Math.floor(Math.random() * chars.length)];
-    return result;
-  };
-
-  const handleGenerateCode = () => {
-    setCodeUpdateError(null);
-    setCodeUpdateSuccess(null);
-    setNewCompanyCode(randomCode());
-  };
-
-  const handleSaveCompanyCode = async () => {
-    setCodeUpdateLoading(true);
-    setCodeUpdateError(null);
-    setCodeUpdateSuccess(null);
-    try {
-      const code = newCompanyCode.trim().toUpperCase();
-      if (!companyId) {
-        setCodeUpdateError('Perusahaan belum dimuat');
-        return;
-      }
-      if (!code || !/^[A-Z0-9]{4,12}$/.test(code)) {
-        setCodeUpdateError('Kode harus 4-12 karakter huruf/angka');
-        return;
-      }
-      const { data: existing } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('code', code)
-        .maybeSingle();
-      if (existing && existing.id !== companyId) {
-        setCodeUpdateError('Kode sudah dipakai perusahaan lain');
-        return;
-      }
-      const { error: upErr } = await supabase
-        .from('companies')
-        .update({ code })
-        .eq('id', companyId);
-      if (upErr) {
-        setCodeUpdateError(upErr.message || 'Gagal memperbarui kode');
-        return;
-      }
-      setCompanyCode(code);
-      setCodeUpdateSuccess('Kode perusahaan berhasil diperbarui');
-      setNewCompanyCode('');
-    } finally {
-      setCodeUpdateLoading(false);
-    }
-  };
-
-  const findCompanyByEmail = async () => {
-    setLookupLoading(true);
-    setLookupError(null);
-    setLookupResult(null);
-    try {
-      const email = searchEmail.trim().toLowerCase();
-      if (!email) {
-        setLookupError('Masukkan email terlebih dahulu');
-        return;
-      }
-      const { data: profile, error: pErr } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('email', email)
-        .maybeSingle();
-      if (pErr || !profile?.company_id) {
-        setLookupError('Profil tidak ditemukan atau belum tergabung perusahaan');
-        return;
-      }
-      const { data: company, error: cErr } = await supabase
-        .from('companies')
-        .select('name, code')
-        .eq('id', profile.company_id)
-        .maybeSingle();
-      if (cErr || !company) {
-        setLookupError('Perusahaan tidak ditemukan atau akses ditolak');
-        return;
-      }
-      setLookupResult({ name: company.name, code: company.code });
-    } finally {
-      setLookupLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -163,67 +67,17 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
       )}
 
       {companyName && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
+          <div className="text-sm text-blue-900">
+            <span className="font-medium">Perusahaan:</span> {companyName}
+          </div>
+          {companyCode && (
             <div className="text-sm text-blue-900">
-              <span className="font-medium">Perusahaan:</span> {companyName}
+              <span className="font-medium">Kode:</span> {companyCode}
             </div>
-            {companyCode && (
-              <div className="text-sm text-blue-900">
-                <span className="font-medium">Kode:</span> {companyCode}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={newCompanyCode}
-              onChange={(e) => setNewCompanyCode(e.target.value)}
-              placeholder="Masukkan kode baru (4-12 huruf/angka)"
-              className="flex-1 px-3 py-2 border border-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            />
-            <button
-              onClick={handleGenerateCode}
-              className="px-3 py-2 bg-blue-200 text-blue-900 rounded-md"
-              disabled={codeUpdateLoading}
-            >
-              Generate
-            </button>
-            <button
-              onClick={handleSaveCompanyCode}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
-              disabled={codeUpdateLoading || !newCompanyCode}
-            >
-              {codeUpdateLoading ? 'Menyimpan...' : 'Simpan Kode'}
-            </button>
-          </div>
-          {codeUpdateError && <div className="text-sm text-red-700">{codeUpdateError}</div>}
-          {codeUpdateSuccess && <div className="text-sm text-green-700">{codeUpdateSuccess}</div>}
+          )}
         </div>
       )}
-
-      <div className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3">
-        <input
-          type="email"
-          value={searchEmail}
-          onChange={(e) => setSearchEmail(e.target.value)}
-          placeholder="Cari kode perusahaan via email (mis. test@gmail.com)"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          onClick={findCompanyByEmail}
-          disabled={lookupLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md disabled:opacity-50"
-        >
-          {lookupLoading ? 'Mencari...' : 'Cari'}
-        </button>
-        {lookupError && <span className="text-sm text-red-600">{lookupError}</span>}
-        {lookupResult && (
-          <span className="text-sm text-gray-900">
-            {lookupResult.name} · Kode: <span className="font-medium">{lookupResult.code}</span>
-          </span>
-        )}
-      </div>
 
       {/* Tabs */}
       <div className="flex space-x-4 border-b">

@@ -23,37 +23,30 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [companyCode, setCompanyCode] = useState('');
 
   const ensureCompanySetup = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak ditemukan');
-
-      const { data: existing, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (existing?.company_id) return;
+    if (companyFlow === 'create') {
+      if (!companyName.trim()) return;
+      const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const { data: company, error: createError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName.trim(),
+          code
+        })
+        .select()
         .maybeSingle();
       
-      if (profileError) throw profileError;
-      if (existing?.company_id) return;
-
-      if (companyFlow === 'create') {
-        if (!companyName.trim()) throw new Error('Nama perusahaan wajib diisi');
-        
-        const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-        
-        const { data: company, error: createError } = await supabase
-          .from('companies')
-          .insert({
-            name: companyName.trim(),
-            code
-          })
-          .select()
-          .maybeSingle();
-
-        if (createError) throw createError;
-        if (!company) throw new Error('Gagal membuat perusahaan');
-
-        const { error: profileUpdateError } = await supabase
+      if (createError) throw createError;
+      
+      if (company) {
+        await supabase
           .from('profiles')
           .upsert({
             id: user.id,
@@ -62,28 +55,22 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             full_name: name || user.email,
             email
           }, { onConflict: 'id' });
-
-        if (profileUpdateError) throw profileUpdateError;
-
-        const { error: settingsError } = await supabase
+        await supabase
           .from('company_settings')
           .upsert({ company_id: company.id }, { onConflict: 'company_id' });
-          
-        if (settingsError) throw settingsError;
+      }
+    } else {
+      if (!companyCode.trim()) return;
+      const { data: company, error: findError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('code', companyCode.trim().toUpperCase())
+        .maybeSingle();
+      
+      if (findError) throw findError;
 
-      } else {
-        if (!companyCode.trim()) throw new Error('Kode perusahaan wajib diisi');
-        
-        const { data: company, error: findError } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('code', companyCode.trim().toUpperCase())
-          .maybeSingle();
-
-        if (findError) throw findError;
-        if (!company?.id) throw new Error('Kode perusahaan tidak valid');
-
-        const { error: joinError } = await supabase
+      if (company?.id) {
+        await supabase
           .from('profiles')
           .upsert({
             id: user.id,
@@ -92,12 +79,9 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             full_name: name || user.email,
             email
           }, { onConflict: 'id' });
-          
-        if (joinError) throw joinError;
+      } else {
+        throw new Error('Kode perusahaan tidak valid');
       }
-    } catch (error) {
-      console.error('Error setup company:', error);
-      throw error;
     }
   };
 

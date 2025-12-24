@@ -78,7 +78,7 @@ export function useScheduledTransfer() {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
@@ -112,7 +112,7 @@ export function useScheduledTransfer() {
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 

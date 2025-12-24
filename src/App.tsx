@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Analytics } from "@vercel/analytics/react";
 import { supabase } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AuthForm } from './components/AuthForm';
@@ -77,15 +78,11 @@ function App() {
 
   const handleLogout = async () => {
     if (confirm('Apakah Anda yakin ingin logout?')) {
-      try {
-        // Logout dari Supabase
-        await supabase.auth.signOut();
-      } catch (error) {
-        console.error('Error logging out:', error);
-      } finally {
-        // Reset state
-        setUser(null);
-      }
+      // Logout dari Supabase
+      await supabase.auth.signOut();
+      
+      // Reset state
+      setUser(null);
     }
   };
 
@@ -160,7 +157,8 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat...</p>
-        </div>
+          <Analytics />
+    </div>
       </div>
     );
   }
@@ -190,6 +188,7 @@ function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-20 lg:ml-64 print:ml-0">
+        <Analytics />
         
       {/* Offline Banner */}
       {isOffline && (
