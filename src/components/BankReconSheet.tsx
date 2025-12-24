@@ -187,7 +187,7 @@ export function BankReconSheet() {
             reconciled: false,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         statementId = newStatement?.id;
       }

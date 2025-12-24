@@ -146,7 +146,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('income_sources')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -154,7 +154,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('income_sources')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -206,7 +206,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('expense_categories')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -214,7 +214,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('expense_categories')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -266,7 +266,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('payment_methods')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     } else {
@@ -274,7 +274,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('payment_methods')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -326,7 +326,7 @@ export function useSupabaseData() {
         .from('company_settings')
         .select('employees')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
       if (error && error.code === 'PGRST204') {
@@ -334,7 +334,7 @@ export function useSupabaseData() {
           .from('user_settings')
           .select('employees')
           .eq('user_id', user?.id)
-          .single();
+          .maybeSingle();
         data = userRes.data;
         error = userRes.error;
       }
@@ -343,7 +343,7 @@ export function useSupabaseData() {
         .from('user_settings')
         .select('employees')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
       data = result.data;
       error = result.error;
     }
@@ -452,7 +452,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error adding income entry:', error);
@@ -467,7 +467,7 @@ export function useSupabaseData() {
             .from('income_entries')
             .insert(dataToInsert)
             .select()
-            .single();
+            .maybeSingle();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -590,7 +590,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching income entry to delete:', fetchError);
@@ -620,7 +620,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .single();
+      .maybeSingle();
     
     const newBalance = (currentBalance?.balance || 0) - amount;
     
@@ -695,7 +695,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error adding expense entry:', error);
@@ -710,7 +710,7 @@ export function useSupabaseData() {
             .from('expense_entries')
             .insert(dataToInsert)
             .select()
-            .single();
+            .maybeSingle();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -818,7 +818,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching expense entry to delete:', fetchError);
@@ -848,7 +848,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .single();
+      .maybeSingle();
     
     const newBalance = (currentBalance?.balance || 0) + amount;
     
@@ -916,7 +916,7 @@ export function useSupabaseData() {
         payment_date: entry.paymentDate
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (!error && data) {
       await loadDebtEntries();
@@ -995,7 +995,7 @@ export function useSupabaseData() {
         .select('*')
         .eq('user_id', user.id)
         .eq('cash_type', cashType)
-        .single();
+        .maybeSingle();
 
       console.log('📊 Current balance data:', balanceData);
 
@@ -1012,7 +1012,7 @@ export function useSupabaseData() {
             created_at: new Date().toISOString()
           })
           .select()
-          .single();
+          .maybeSingle();
         
         if (createError) {
           console.error('❌ Error creating balance:', createError);

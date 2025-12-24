@@ -41,7 +41,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           code
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (companyError) throw companyError;
       if (company) {
