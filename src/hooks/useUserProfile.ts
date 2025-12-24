@@ -20,7 +20,7 @@ export function useUserProfile() {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         // If profile doesn't exist, create default admin profile
@@ -55,7 +55,7 @@ export function useUserProfile() {
           updated_at: new Date().toISOString()
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 

@@ -86,7 +86,7 @@ export function useNotifications() {
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setNotifications([data, ...notifications]);

@@ -92,7 +92,7 @@ export function useInvoice() {
           updatedAt: now,
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setInvoices([data, ...invoices]);
