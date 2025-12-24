@@ -169,7 +169,7 @@ export function BankReconSheet() {
         .select('id')
         .eq('accountNumber', selectedAccount)
         .eq('statementDate', transactionForm.date)
-        .single();
+        .maybeSingle();
 
       if (existingStatement) {
         statementId = existingStatement.id;
@@ -187,7 +187,7 @@ export function BankReconSheet() {
             reconciled: false,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         statementId = newStatement?.id;
       }

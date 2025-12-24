@@ -163,7 +163,7 @@ export function useInvoice() {
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setCustomers([...customers, data]);
