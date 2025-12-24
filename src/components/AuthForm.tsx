@@ -29,12 +29,12 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       .from('profiles')
       .select('company_id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
     if (existing?.company_id) return;
     if (companyFlow === 'create') {
       if (!companyName.trim()) return;
       const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-      const { data: company } = await supabase
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert({
           name: companyName.trim(),
@@ -42,6 +42,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         })
         .select()
         .single();
+
+      if (companyError) throw companyError;
       if (company) {
         await supabase
           .from('profiles')
@@ -62,7 +64,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         .from('companies')
         .select('id')
         .eq('code', companyCode.trim().toUpperCase())
-        .single();
+        .maybeSingle();
       if (company?.id) {
         await supabase
           .from('profiles')

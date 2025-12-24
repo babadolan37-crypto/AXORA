@@ -21,7 +21,7 @@ export function useAdminData() {
         .from('profiles')
         .select('company_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       setCompanyId(profile?.company_id || null);
       await fetchAdminData();
     };
@@ -47,7 +47,7 @@ export function useAdminData() {
           .from('profiles')
           .select('company_id')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         cid = myProfile?.company_id || null;
         setCompanyId(cid);
       }
@@ -69,7 +69,7 @@ export function useAdminData() {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         usersData = res.data ? [res.data] : [];
         usersError = res.error || null;
       }
@@ -164,7 +164,7 @@ export function useAdminData() {
         .from('profiles')
         .select('company_id, role, full_name')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       await supabase.from('audit_logs').insert({
         user_id: user.id,

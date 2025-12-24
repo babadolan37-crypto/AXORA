@@ -26,13 +26,13 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
         .from('profiles')
         .select('company_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       if (!profile?.company_id) return;
       const { data: company } = await supabase
         .from('companies')
         .select('id, name, code')
         .eq('id', profile.company_id)
-        .single();
+        .maybeSingle();
       if (company) {
         setCompanyId(company.id || null);
         setCompanyName(company.name || null);
@@ -108,7 +108,7 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
         .from('profiles')
         .select('company_id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
       if (pErr || !profile?.company_id) {
         setLookupError('Profil tidak ditemukan atau belum tergabung perusahaan');
         return;
@@ -117,7 +117,7 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
         .from('companies')
         .select('name, code')
         .eq('id', profile.company_id)
-        .single();
+        .maybeSingle();
       if (cErr || !company) {
         setLookupError('Perusahaan tidak ditemukan atau akses ditolak');
         return;
