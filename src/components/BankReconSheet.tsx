@@ -82,7 +82,7 @@ export function BankReconSheet() {
           .from('bank_statements')
           .select('id')
           .eq('accountNumber', selectedAccount)
-          .maybeSingle();
+          .single();
 
         if (statementsData) {
           const { data: transData } = await supabase
@@ -187,7 +187,7 @@ export function BankReconSheet() {
             reconciled: false,
           })
           .select()
-          .maybeSingle();
+          .single();
 
         statementId = newStatement?.id;
       }

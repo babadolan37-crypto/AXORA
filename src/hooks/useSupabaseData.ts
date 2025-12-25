@@ -423,7 +423,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .maybeSingle();
+      .single();
     
     if (error) {
       console.error('Error adding income entry:', error);
@@ -438,7 +438,7 @@ export function useSupabaseData() {
             .from('income_entries')
             .insert(dataToInsert)
             .select()
-            .maybeSingle();
+            .single();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -561,7 +561,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .maybeSingle();
+      .single();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching income entry to delete:', fetchError);
@@ -591,7 +591,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .maybeSingle();
+      .single();
     
     const newBalance = (currentBalance?.balance || 0) - amount;
     
@@ -666,7 +666,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .maybeSingle();
+      .single();
     
     if (error) {
       console.error('Error adding expense entry:', error);
@@ -681,7 +681,7 @@ export function useSupabaseData() {
             .from('expense_entries')
             .insert(dataToInsert)
             .select()
-            .maybeSingle();
+            .single();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -789,7 +789,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .maybeSingle();
+      .single();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching expense entry to delete:', fetchError);
@@ -819,7 +819,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .maybeSingle();
+      .single();
     
     const newBalance = (currentBalance?.balance || 0) + amount;
     
@@ -887,7 +887,7 @@ export function useSupabaseData() {
         payment_date: entry.paymentDate
       })
       .select()
-      .maybeSingle();
+      .single();
     
     if (!error && data) {
       await loadDebtEntries();
@@ -966,7 +966,7 @@ export function useSupabaseData() {
         .select('*')
         .eq('user_id', user.id)
         .eq('cash_type', cashType)
-        .maybeSingle();
+        .single();
 
       console.log('📊 Current balance data:', balanceData);
 
@@ -983,7 +983,7 @@ export function useSupabaseData() {
             created_at: new Date().toISOString()
           })
           .select()
-          .maybeSingle();
+          .single();
         
         if (createError) {
           console.error('❌ Error creating balance:', createError);

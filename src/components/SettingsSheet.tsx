@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building, Copy, RefreshCw, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building, Copy, AlertCircle } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 import { supabase } from '../lib/supabase';
@@ -110,7 +110,7 @@ export function SettingsSheet({
             .from('companies')
             .insert({ name, code })
             .select()
-            .maybeSingle();
+            .single();
             
         if (createError) throw createError;
         
@@ -275,67 +275,67 @@ export function SettingsSheet({
       </div>
 
       {/* Company Profile - NEW SECTION */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-6 py-4">
-          <div className="flex items-center gap-3 text-white">
-            <Building size={24} />
-            <h3 className="text-lg">Profil Perusahaan</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Building className="text-indigo-600" size={20} />
+          <h3>Profil Perusahaan</h3>
+        </div>
+
+        {loadingCompany ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
           </div>
-        </div>
-        
-        <div className="p-6">
-          {loadingCompany ? (
-            <div className="flex items-center gap-2 text-gray-500">
-              <RefreshCw className="animate-spin" size={16} />
-              Memuat data perusahaan...
-            </div>
-          ) : company ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Nama Perusahaan</label>
-                <div className="text-lg font-medium text-gray-900">{company.name}</div>
+        ) : company ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nama Perusahaan</label>
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 font-medium">
+                {company.name}
               </div>
-              
-              <div>
-                <label className="block text-sm text-gray-500 mb-1">Kode Perusahaan (untuk Mengundang Tim)</label>
-                <div className="flex items-center gap-2">
-                  <div className="bg-gray-100 px-4 py-2 rounded-lg font-mono text-lg font-bold text-blue-600 tracking-wider">
-                    {company.code}
-                  </div>
-                  <button
-                    onClick={copyCode}
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Salin Kode"
-                  >
-                    <Copy size={20} />
-                  </button>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kode Akses Karyawan</label>
+              <div className="flex gap-2">
+                <div className="flex-1 p-3 bg-gray-50 rounded-lg border border-gray-200 font-mono font-bold tracking-wider text-center">
+                  {company.code}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Bagikan kode ini kepada karyawan atau tim Anda saat mereka mendaftar (pilih "Gabung Perusahaan").
-                </p>
+                <button 
+                  onClick={copyCode}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-2"
+                  title="Salin Kode"
+                >
+                  <Copy size={18} />
+                  <span className="hidden sm:inline">Salin</span>
+                </button>
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                <AlertCircle size={12} className="inline mr-1" />
+                Bagikan kode ini kepada karyawan agar mereka dapat bergabung ke perusahaan Anda.
+              </p>
             </div>
-          ) : (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="text-red-600 shrink-0" size={20} />
-                <div>
-                  <h4 className="text-red-800 font-medium mb-1">Perusahaan Tidak Ditemukan</h4>
-                  <p className="text-sm text-red-600 mb-3">
-                    Akun Anda belum terhubung dengan perusahaan manapun. Data mungkin tidak tersimpan dengan benar.
-                  </p>
-                  <button
-                    onClick={handleCreateDefaultCompany}
-                    disabled={createCompanyLoading}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
-                  >
-                    {createCompanyLoading ? 'Memproses...' : 'Buat Perusahaan Baru'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <Building className="mx-auto text-gray-400 mb-2" size={32} />
+            <h4 className="font-medium text-gray-900 mb-1">Belum Ada Perusahaan</h4>
+            <p className="text-sm text-gray-500 mb-4">Anda belum terhubung dengan perusahaan manapun.</p>
+            
+            <button
+              onClick={handleCreateDefaultCompany}
+              disabled={createCompanyLoading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 mx-auto disabled:opacity-70"
+            >
+              {createCompanyLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Plus size={18} />
+              )}
+              Buat Perusahaan Baru
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Cash Balance Settings - NEW SECTION */}

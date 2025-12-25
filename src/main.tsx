@@ -28,7 +28,7 @@ try {
     <React.StrictMode>
       <ErrorBoundary>
         <App />
-        <Analytics />
+        {/* <Analytics /> */}
       </ErrorBoundary>
     </React.StrictMode>
   );

@@ -5,11 +5,9 @@ import { AuthForm } from './components/AuthForm';
 import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
 import { DebtSheet } from './components/DebtSheet';
-// import { SettingsSheet } from './components/SettingsSheet';
-import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
-
 // Lazy load SettingsSheet to prevent startup crashes
 const SettingsSheet = lazy(() => import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet })));
+import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
 import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
 import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
 import { BudgetSheet } from './components/BudgetSheet';

@@ -23,13 +23,12 @@ export function useUserProfile() {
         .maybeSingle();
 
       if (error) {
-        throw error;
-      }
-
-      if (!data) {
         // If profile doesn't exist, create default admin profile
-        await createDefaultProfile(user.id, user.email || '');
-        return;
+        if (error.code === 'PGRST116') {
+          await createDefaultProfile(user.id, user.email || '');
+          return;
+        }
+        throw error;
       }
 
       setProfile(mapProfileFromDb(data));
@@ -100,7 +99,7 @@ export function useUserProfile() {
         .eq('id', profile.id)
         .eq('user_id', user.id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 

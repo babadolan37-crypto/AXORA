@@ -112,7 +112,7 @@ export function useScheduledTransfer() {
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
