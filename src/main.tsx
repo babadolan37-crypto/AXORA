@@ -21,6 +21,11 @@ window.onerror = function(message, source, lineno, colno, error) {
   }
 };
 
+window.addEventListener('unhandledrejection', event => {
+  console.error('Unhandled rejection:', event.reason);
+  // Optionally display this in the UI if critical
+});
+
 try {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
