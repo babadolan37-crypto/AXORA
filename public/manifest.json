@@ -1,7 +1,7 @@
 {
-  "name": "Wealthify - Sistem Keuangan PT",
-  "short_name": "Wealthify",
-  "description": "Wealthify - Sistem Pencatatan Keuangan & Laporan PT",
+  "name": "Axora - Sistem Keuangan PT",
+  "short_name": "Axora",
+  "description": "Axora - Sistem Pencatatan Keuangan & Laporan PT",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
