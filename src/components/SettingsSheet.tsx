@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building, Copy, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Settings as SettingsIcon, DollarSign, TrendingUp, TrendingDown, Users, Wallet, Shield, History, Lock, Building, Copy, AlertCircle, RefreshCw } from 'lucide-react';
 import { useCashManagement } from '../hooks/useCashManagement';
 import { AdvancedFeaturesSection } from './AdvancedFeaturesSection';
 import { supabase } from '../lib/supabase';
@@ -36,9 +36,14 @@ export function SettingsSheet({
   const [newPaymentMethod, setNewPaymentMethod] = useState('');
   const [newEmployee, setNewEmployee] = useState('');
   const [role, setRole] = useState<string | null>(null);
-  const [company, setCompany] = useState<{name: string, code: string} | null>(null);
+  const [company, setCompany] = useState<{id: string, name: string, code: string} | null>(null);
   const [loadingCompany, setLoadingCompany] = useState(false);
   const [createCompanyLoading, setCreateCompanyLoading] = useState(false);
+  
+  // Change Code State
+  const [showChangeCodeModal, setShowChangeCodeModal] = useState(false);
+  const [newCompanyCode, setNewCompanyCode] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
 
   const canEditSettings = role === null || role === 'owner' || role === 'admin';
 
@@ -80,7 +85,7 @@ export function SettingsSheet({
       if (profile?.company_id) {
         const { data: comp } = await supabase
           .from('companies')
-          .select('name, code')
+          .select('id, name, code')
           .eq('id', profile.company_id)
           .maybeSingle();
         setCompany(comp);
@@ -263,6 +268,55 @@ export function SettingsSheet({
     }).format(amount);
   };
 
+  const handleChangeCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!company) return;
+    if (!newCompanyCode.trim()) return alert('Kode baru wajib diisi');
+    if (!passwordConfirm) return alert('Password konfirmasi wajib diisi');
+    
+    if (!confirm('PERINGATAN: Mengubah kode perusahaan akan mempengaruhi cara login seluruh karyawan. Lanjutkan?')) return;
+
+    setLoadingCompany(true);
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || !user.email) throw new Error('User info missing');
+
+        // Verify password
+        const { error: authError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: passwordConfirm
+        });
+        
+        if (authError) throw new Error('Password salah. Verifikasi gagal.');
+
+        // Check uniqueness using RPC to be safe or existing check
+        // Since owner is logged in, they might have read access, but let's stick to standard unique check
+        // The RPC change_company_code handles uniqueness check internally!
+        
+        // Call RPC to update
+        const { data: result, error: rpcError } = await supabase
+            .rpc('change_company_code', {
+                company_uuid: company.id,
+                new_code: newCompanyCode.trim().toUpperCase(),
+                actor_uuid: user.id
+            });
+            
+        if (rpcError) throw rpcError;
+        if (!result.success) throw new Error(result.message);
+
+        alert('Kode perusahaan berhasil diubah!');
+        setShowChangeCodeModal(false);
+        setPasswordConfirm('');
+        setNewCompanyCode('');
+        fetchCompany();
+        
+    } catch (err: any) {
+        alert('Gagal mengubah kode: ' + err.message);
+    } finally {
+        setLoadingCompany(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-3">
@@ -310,6 +364,16 @@ export function SettingsSheet({
                   <Copy size={18} />
                   <span className="hidden sm:inline">Salin</span>
                 </button>
+                {canEditSettings && (
+                  <button 
+                    onClick={() => setShowChangeCodeModal(true)}
+                    className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors flex items-center gap-2"
+                    title="Ubah Kode"
+                  >
+                    <RefreshCw size={18} />
+                    <span className="hidden sm:inline">Ubah</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 <AlertCircle size={12} className="inline mr-1" />
@@ -740,6 +804,67 @@ export function SettingsSheet({
                 </div>
               </button>
             )}
+          </div>
+        </div>
+      )}
+      {/* Change Code Modal */}
+      {showChangeCodeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Ubah Kode Perusahaan</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Mengubah kode perusahaan akan mempengaruhi cara login seluruh karyawan. Pastikan Anda memberitahu tim Anda setelah perubahan.
+            </p>
+            
+            <form onSubmit={handleChangeCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kode Baru</label>
+                <input
+                  type="text"
+                  value={newCompanyCode}
+                  onChange={(e) => setNewCompanyCode(e.target.value.toUpperCase())}
+                  placeholder="Contoh: NEWCODE2025"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none uppercase font-mono"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Anda</label>
+                <input
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  placeholder="Masukkan password login Anda"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Untuk keamanan, verifikasi identitas diperlukan.</p>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChangeCodeModal(false);
+                    setPasswordConfirm('');
+                    setNewCompanyCode('');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  disabled={loadingCompany}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-2"
+                  disabled={loadingCompany}
+                >
+                  {loadingCompany && <RefreshCw size={16} className="animate-spin" />}
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
