@@ -561,7 +561,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching income entry to delete:', fetchError);
@@ -591,7 +591,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .single();
+      .maybeSingle();
     
     const newBalance = (currentBalance?.balance || 0) - amount;
     
@@ -789,7 +789,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching expense entry to delete:', fetchError);
@@ -819,7 +819,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .single();
+      .maybeSingle();
     
     const newBalance = (currentBalance?.balance || 0) + amount;
     
@@ -966,7 +966,7 @@ export function useSupabaseData() {
         .select('*')
         .eq('user_id', user.id)
         .eq('cash_type', cashType)
-        .single();
+        .maybeSingle();
 
       console.log('📊 Current balance data:', balanceData);
 
