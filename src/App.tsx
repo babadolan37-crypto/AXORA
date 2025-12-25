@@ -5,8 +5,15 @@ import { AuthForm } from './components/AuthForm';
 import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
 import { DebtSheet } from './components/DebtSheet';
-// Lazy load SettingsSheet to prevent startup crashes
-const SettingsSheet = lazy(() => import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet })));
+// Lazy load SettingsSheet to prevent startup crashes with error handling
+const SettingsSheet = lazy(() => 
+  import('./components/SettingsSheet')
+    .then(module => ({ default: module.SettingsSheet }))
+    .catch(err => {
+      console.error("Failed to load SettingsSheet:", err);
+      return { default: () => <div className="p-8 text-center text-red-600">Gagal memuat komponen Pengaturan. Silakan refresh halaman.</div> };
+    })
+);
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
 import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
 import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
