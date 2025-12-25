@@ -681,7 +681,7 @@ export function useSupabaseData() {
             .from('expense_entries')
             .insert(dataToInsert)
             .select()
-            .single();
+            .maybeSingle();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -789,7 +789,7 @@ export function useSupabaseData() {
       .select('*')
       .eq('id', id)
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
     
     if (fetchError || !entryToDelete) {
       console.error('❌ Error fetching expense entry to delete:', fetchError);
@@ -819,7 +819,7 @@ export function useSupabaseData() {
       .select('balance')
       .eq('user_id', user?.id)
       .eq('cash_type', cashType)
-      .single();
+      .maybeSingle();
     
     const newBalance = (currentBalance?.balance || 0) + amount;
     
@@ -887,7 +887,7 @@ export function useSupabaseData() {
         payment_date: entry.paymentDate
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (!error && data) {
       await loadDebtEntries();
@@ -966,7 +966,7 @@ export function useSupabaseData() {
         .select('*')
         .eq('user_id', user.id)
         .eq('cash_type', cashType)
-        .single();
+        .maybeSingle();
 
       console.log('📊 Current balance data:', balanceData);
 
@@ -983,7 +983,7 @@ export function useSupabaseData() {
             created_at: new Date().toISOString()
           })
           .select()
-          .single();
+          .maybeSingle();
         
         if (createError) {
           console.error('❌ Error creating balance:', createError);

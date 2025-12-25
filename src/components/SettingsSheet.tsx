@@ -110,7 +110,7 @@ export function SettingsSheet({
             .from('companies')
             .insert({ name, code })
             .select()
-            .single();
+            .maybeSingle();
             
         if (createError) throw createError;
         
