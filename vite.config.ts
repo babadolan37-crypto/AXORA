@@ -14,6 +14,13 @@
     build: {
       target: 'es2020',
       outDir: 'dist',
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
+    },
+    define: {
+      'process.env': {},
+      global: 'window',
     },
     server: {
       host: true,
