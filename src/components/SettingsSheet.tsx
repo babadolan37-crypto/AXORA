@@ -110,9 +110,10 @@ export function SettingsSheet({
             .from('companies')
             .insert({ name, code })
             .select()
-            .single();
+            .maybeSingle();
             
         if (createError) throw createError;
+        if (!newCompany) throw new Error('Gagal membuat perusahaan: Tidak ada data dikembalikan');
         
         // Link to profile
         await supabase

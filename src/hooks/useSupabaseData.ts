@@ -423,7 +423,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error adding income entry:', error);
@@ -438,7 +438,7 @@ export function useSupabaseData() {
             .from('income_entries')
             .insert(dataToInsert)
             .select()
-            .single();
+            .maybeSingle();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -666,7 +666,7 @@ export function useSupabaseData() {
         cash_type: entry.cashType || 'big' // Default ke Kas Besar
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('Error adding expense entry:', error);
@@ -681,7 +681,7 @@ export function useSupabaseData() {
             .from('expense_entries')
             .insert(dataToInsert)
             .select()
-            .single();
+            .maybeSingle();
           
           if (retryError) {
             console.error('❌ Retry error:', retryError);
@@ -887,7 +887,7 @@ export function useSupabaseData() {
         payment_date: entry.paymentDate
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (!error && data) {
       await loadDebtEntries();
@@ -983,7 +983,7 @@ export function useSupabaseData() {
             created_at: new Date().toISOString()
           })
           .select()
-          .single();
+          .maybeSingle();
         
         if (createError) {
           console.error('❌ Error creating balance:', createError);

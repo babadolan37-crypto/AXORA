@@ -359,12 +359,13 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (debitError) {
         console.error('Error creating debit transaction:', debitError);
         throw new Error(`Gagal membuat transaksi debit: ${debitError.message}`);
       }
+      if (!debitTransaction) throw new Error('Gagal membuat transaksi debit: Tidak ada data');
 
       // Create second transaction (credit to destination)
       const { data: creditTransaction, error: creditError } = await supabase
@@ -383,16 +384,16 @@ export function useCashManagement() {
           updated_at: now
         }])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (creditError) {
-        console.error('Error creating credit transaction:', creditError);
+      if (creditError || !creditTransaction) {
+        console.error('Error creating credit transaction:', creditError || 'No data');
         // Rollback: delete the first transaction
         await supabase
           .from('cash_transactions')
           .delete()
           .eq('id', debitTransaction.id);
-        throw new Error(`Gagal membuat transaksi kredit: ${creditError.message}`);
+        throw new Error(`Gagal membuat transaksi kredit: ${creditError?.message || 'Tidak ada data'}`);
       }
 
       // Update debit transaction with linked ID

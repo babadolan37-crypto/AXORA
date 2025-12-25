@@ -163,9 +163,10 @@ export function useInvoice() {
           createdAt: new Date().toISOString(),
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error('Gagal menambahkan pelanggan: Data tidak dikembalikan');
       setCustomers([...customers, data]);
       return data;
     } catch (error) {
