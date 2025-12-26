@@ -1,8 +1,8 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
-// Use Edge Runtime for better performance
-export const runtime = 'edge';
+// Revert to Node.js runtime for stability
+// export const runtime = 'edge';
 
 // Configure OpenAI provider to use Vercel AI Gateway
 const openai = createOpenAI({
