@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAdminData } from '../hooks/useAdminData';
-import { Users, Activity, RefreshCw, UserCheck, UserX, Clock, Ban, CheckCircle } from 'lucide-react';
+import { Users, Activity, RefreshCw, UserCheck, UserX, Clock, Ban, CheckCircle, CheckCircle2 } from 'lucide-react';
 
 export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'requests' | 'logs' }) {
   const { users, auditLogs, loading, error, refresh, updateUserRole, approveMember, rejectMember, toggleMemberStatus } = useAdminData();
@@ -325,7 +325,3 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
   );
 }
 
-// Helper icon component if missing
-function CheckCircle2(props: any) {
-    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-}
