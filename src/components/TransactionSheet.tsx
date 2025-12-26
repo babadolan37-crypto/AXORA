@@ -4,8 +4,11 @@ import { Plus, Trash2, Camera, TrendingUp, TrendingDown, Scan, Wallet, ArrowRigh
   EyeOff,
   X,
   Pencil,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
 import { PhotoViewer } from './PhotoViewer';
 import { OCRScanner } from './OCRScanner';
@@ -330,6 +333,51 @@ export function TransactionSheet({
     setIsFormOpen(true);
   };
 
+  const exportToExcel = () => {
+    // 1. Prepare Data
+    const dataToExport = filteredEntries.map(entry => {
+      const isIncome = 'source' in entry;
+      return {
+        'Tanggal': entry.date,
+        'Jenis': isIncome ? 'Pemasukan' : 'Pengeluaran',
+        'Kategori/Sumber': isIncome ? (entry as IncomeEntry).source : (entry as ExpenseEntry).category,
+        'Keterangan': entry.description,
+        'Jumlah': entry.amount,
+        'Metode Pembayaran': entry.paymentMethod,
+        'Kas': entry.cashType === 'big' ? 'Kas Besar' : 'Kas Kecil',
+        'Penerima/Pengirim': isIncome ? (entry as IncomeEntry).receivedFrom : (entry as ExpenseEntry).paidTo,
+        'Catatan': entry.notes
+      };
+    });
+
+    // 2. Create Workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+    // 3. Format Header (Bold & Centered) - Basic styling isn't supported in free SheetJS, 
+    // but column widths are helpful.
+    const wscols = [
+      {wch: 12}, // Tanggal
+      {wch: 12}, // Jenis
+      {wch: 20}, // Kategori
+      {wch: 30}, // Keterangan
+      {wch: 15}, // Jumlah
+      {wch: 15}, // Metode
+      {wch: 10}, // Kas
+      {wch: 20}, // Pihak Terkait
+      {wch: 40}  // Catatan
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan Keuangan");
+
+    // 4. Generate File
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'});
+    
+    saveAs(data, `Laporan_${transactionType === 'income' ? 'Pemasukan' : 'Pengeluaran'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   const handleDelete = (id: string) => {
     if (transactionType === 'income') {
       onDeleteIncome(id);
@@ -580,6 +628,14 @@ export function TransactionSheet({
             <Scan size={20} />
             <span className="hidden sm:inline">OCR Scanner</span>
             <span className="sm:hidden">Scan</span>
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors"
+          >
+            <Download size={20} />
+            <span className="hidden sm:inline">Export Excel</span>
+            <span className="sm:hidden">Excel</span>
           </button>
           <button
             onClick={handleAddNew}
