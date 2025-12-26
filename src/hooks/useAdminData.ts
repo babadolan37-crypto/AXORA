@@ -137,21 +137,51 @@ export function useAdminData() {
 
   async function updateUserRole(userId: string, newRole: string) {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+      const { data, error } = await supabase.rpc('update_member_role', {
+        target_user_id: userId,
+        new_role: newRole
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.message);
       
       // Refresh local state
       setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole as any } : u));
       
-      // Log this action
-      await logAction('UPDATE_ROLE', 'profiles', userId, { role: newRole });
-      
       return { success: true };
     } catch (err: any) {
+      console.error('Update role failed:', err);
+      // Fallback to direct update if RPC fails (for backward compatibility during migration)
+      if (err.message?.includes('function update_member_role') || err.code === '42883') {
+         const { error: directError } = await supabase
+          .from('profiles')
+          .update({ role: newRole, updated_at: new Date().toISOString() })
+          .eq('id', userId);
+          
+         if (!directError) {
+             setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, role: newRole as any } : u));
+             return { success: true };
+         }
+      }
+      return { success: false, error: err.message };
+    }
+  }
+
+  async function toggleMemberStatus(targetUserId: string, newStatus: string) {
+    try {
+      const { data, error } = await supabase.rpc('toggle_member_status', {
+        target_user_id: targetUserId,
+        new_status: newStatus
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      // Refresh
+      setUsers(prev => prev.map(u => u.user_id === targetUserId ? { ...u, status: newStatus as any } : u));
+      return { success: true };
+    } catch (err: any) {
+      console.error('Status change failed:', err);
       return { success: false, error: err.message };
     }
   }
@@ -237,6 +267,7 @@ export function useAdminData() {
     updateUserRole,
     approveMember,
     rejectMember,
+    toggleMemberStatus,
     logAction
   };
 }

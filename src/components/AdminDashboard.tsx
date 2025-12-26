@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAdminData } from '../hooks/useAdminData';
-import { Users, Activity, RefreshCw, UserCheck, UserX, Clock } from 'lucide-react';
+import { Users, Activity, RefreshCw, UserCheck, UserX, Clock, Ban, CheckCircle } from 'lucide-react';
 
 export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'requests' | 'logs' }) {
-  const { users, auditLogs, loading, error, refresh, updateUserRole, approveMember, rejectMember } = useAdminData();
+  const { users, auditLogs, loading, error, refresh, updateUserRole, approveMember, rejectMember, toggleMemberStatus } = useAdminData();
   const [activeTab, setActiveTab] = useState<'users' | 'requests' | 'logs'>(initialTab);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [companyCode, setCompanyCode] = useState<string | null>(null);
 
   // Filter lists
-  const activeUsers = users.filter(u => u.status === 'active');
+  const activeUsers = users.filter(u => u.status === 'active' || u.status === 'suspended');
   const pendingUsers = users.filter(u => u.status === 'pending');
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -211,7 +211,8 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold
+                          ${user.status === 'suspended' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
                           {user.full_name ? user.full_name.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : '?')}
                         </div>
                         <div className="ml-4">
@@ -231,21 +232,42 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.created_at).toLocaleDateString('id-ID')}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {user.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <select 
-                        className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        value={user.role}
-                        onChange={(e) => updateUserRole(user.user_id, e.target.value)}
-                      >
-                        <option value="owner">Owner</option>
-                        <option value="admin">Admin</option>
-                        <option value="manager">Manager</option>
-                        <option value="employee">Employee</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
+                      <div className="flex items-center justify-end gap-2">
+                        {user.role !== 'owner' && (
+                          <select 
+                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            value={user.role}
+                            onChange={(e) => updateUserRole(user.user_id, e.target.value)}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="employee">Employee</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                        )}
+                        
+                        {/* Suspend/Activate Button */}
+                        {user.role !== 'owner' && toggleMemberStatus && (
+                          <button
+                            onClick={() => toggleMemberStatus(user.user_id, user.status === 'active' ? 'suspended' : 'active')}
+                            className={`p-1.5 rounded-md transition-colors ${
+                              user.status === 'active' 
+                                ? 'text-red-600 hover:bg-red-50' 
+                                : 'text-green-600 hover:bg-green-50'
+                            }`}
+                            title={user.status === 'active' ? 'Suspend User' : 'Activate User'}
+                          >
+                            {user.status === 'active' ? <Ban size={18} /> : <CheckCircle size={18} />}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -301,6 +323,11 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
       </div>
     </div>
   );
+}
+
+// Helper icon component if missing
+function CheckCircle2(props: any) {
+    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
 }
 
 // Helper icon component if missing
