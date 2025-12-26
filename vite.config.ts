@@ -27,6 +27,13 @@ export default defineConfig({
     build: {
       target: 'esnext',
       outDir: 'dist',
+      rollupOptions: {
+        output: {
+          entryFileNames: `assets/[name].${Date.now()}.js`,
+          chunkFileNames: `assets/[name].${Date.now()}.js`,
+          assetFileNames: `assets/[name].[ext]`
+        }
+      }
     },
     server: {
       host: true,
