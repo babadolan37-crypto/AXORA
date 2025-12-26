@@ -7,20 +7,67 @@ import { DashboardSheet } from './components/DashboardSheet';
 import { DebtSheet } from './components/DebtSheet';
 import { SessionTimeout } from './components/SessionTimeout';
 import { WaitingApproval } from './components/WaitingApproval';
-// ... existing imports ...
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
-// ... imports ...
+import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
+import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
+import { BudgetSheet } from './components/BudgetSheet';
+import { InvoiceSheet } from './components/InvoiceSheet';
+import { RecurringSheet } from './components/RecurringSheet';
+import { ApprovalSheet } from './components/ApprovalSheet';
+import { NotificationSheet } from './components/NotificationSheet';
+import { BankReconSheet } from './components/BankReconSheet';
+import { FinancialReportsSheet } from './components/FinancialReportsSheet';
+import AdminDashboard from './components/AdminDashboard';
+import { FixedAssetsSheet } from './components/FixedAssetsSheet';
+import { useSupabaseData } from './hooks/useSupabaseData';
+import { useNotifications } from './hooks/useNotifications';
 
-// ...
+// Lazy load SettingsSheet to prevent startup crashes with error handling
+const SettingsSheet = lazy(() => 
+  import('./components/SettingsSheet')
+    .then(module => ({ default: module.SettingsSheet }))
+    .catch(err => {
+      console.error("Failed to load SettingsSheet:", err);
+      return { default: () => <div className="p-8 text-center text-red-600">Gagal memuat komponen Pengaturan. Silakan refresh halaman.</div> };
+    })
+);
+
+type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | 'roles' | 'audit' | 'notifications' | ModuleType;
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [user, setUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<string>('active'); // Add status state
   const [authLoading, setAuthLoading] = useState(true);
-  const [dataMigrated, setDataMigrated] = useState(false);
 
-  // ... hooks ...
+  const {
+    loading,
+    incomeSources,
+    expenseCategories,
+    paymentMethods,
+    employees,
+    incomeEntries,
+    expenseEntries,
+    debtEntries,
+    saveIncomeSources,
+    saveExpenseCategories,
+    savePaymentMethods,
+    saveEmployees,
+    addIncomeEntry,
+    updateIncomeEntry,
+    deleteIncomeEntry,
+    addExpenseEntry,
+    updateExpenseEntry,
+    deleteExpenseEntry,
+    addDebtEntry,
+    updateDebtEntry,
+    deleteDebtEntry,
+    resetAllData,
+    isOffline,
+  } = useSupabaseData();
+
+  // Notifications hook
+  const { unreadCount } = useNotifications();
 
   // Check auth state and status
   useEffect(() => {
@@ -59,10 +106,82 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ...
+  const handleLogout = async () => {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+      // Logout dari Supabase
+      await supabase.auth.signOut();
+      
+      // Reset state
+      setUser(null);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    // Refresh auth state from Supabase
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+  };
+
+  // Income handlers
+  const handleAddIncome = async (entry: Omit<any, 'id'>) => {
+    await addIncomeEntry(entry);
+  };
+
+  const handleUpdateIncome = async (id: string, entry: Omit<any, 'id'>) => {
+    await updateIncomeEntry(id, entry);
+  };
+
+  const handleDeleteIncome = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+      await deleteIncomeEntry(id);
+    }
+  };
+
+  // Expense handlers
+  const handleAddExpense = async (entry: Omit<any, 'id'>) => {
+    await addExpenseEntry(entry);
+  };
+
+  const handleUpdateExpense = async (id: string, entry: Omit<any, 'id'>) => {
+    await updateExpenseEntry(id, entry);
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+      await deleteExpenseEntry(id);
+    }
+  };
+
+  // Debt handlers
+  const handleAddDebt = async (entry: Omit<any, 'id'>) => {
+    await addDebtEntry(entry);
+  };
+
+  const handleUpdateDebt = async (id: string, entry: Omit<any, 'id'>) => {
+    await updateDebtEntry(id, entry);
+  };
+
+  const handleDeleteDebt = async (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+      await deleteDebtEntry(id);
+    }
+  };
+
+  // Settings handlers
+  const handleUpdateIncomeSources = async (sources: string[]) => {
+    await saveIncomeSources(sources);
+  };
+
+  const handleUpdateExpenseCategories = async (categories: string[]) => {
+    await saveExpenseCategories(categories);
+  };
+
+  const handleUpdatePaymentMethods = async (methods: string[]) => {
+    await savePaymentMethods(methods);
+  };
 
   if (authLoading) {
-    // ... loading UI
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -83,7 +202,6 @@ function App() {
   }
 
   if (loading) {
-    // ...
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -103,6 +221,7 @@ function App() {
         activeModule={activeTab as ModuleType}
         onChange={(module) => setActiveTab(module as TabType)}
       />
+
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-20 lg:ml-64 print:ml-0">
