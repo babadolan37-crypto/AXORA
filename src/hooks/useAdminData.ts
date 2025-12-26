@@ -116,6 +116,7 @@ export function useAdminData() {
         id: u.id,
         user_id: u.id,
         role: u.role,
+        status: u.status, // Add status mapping
         full_name: u.full_name || u.name || null,
         email: u.email || null,
         phone: u.phone || null,
@@ -182,6 +183,50 @@ export function useAdminData() {
     }
   }
 
+  async function approveMember(targetUserId: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.rpc('approve_member', {
+        target_user_id: targetUserId,
+        actor_user_id: user.id
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      // Refresh
+      setUsers(prev => prev.map(u => u.user_id === targetUserId ? { ...u, status: 'active' } : u));
+      return { success: true };
+    } catch (err: any) {
+      console.error('Approval failed:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  async function rejectMember(targetUserId: string) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.rpc('reject_member', {
+        target_user_id: targetUserId,
+        actor_user_id: user.id
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      // Refresh
+      setUsers(prev => prev.map(u => u.user_id === targetUserId ? { ...u, status: 'rejected' } : u));
+      return { success: true };
+    } catch (err: any) {
+      console.error('Rejection failed:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
   return {
     users,
     auditLogs,
@@ -190,6 +235,8 @@ export function useAdminData() {
     error,
     refresh: fetchAdminData,
     updateUserRole,
+    approveMember,
+    rejectMember,
     logAction
   };
 }

@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAdminData } from '../hooks/useAdminData';
-import { Users, Activity, RefreshCw } from 'lucide-react';
+import { Users, Activity, RefreshCw, UserCheck, UserX, Clock } from 'lucide-react';
 
-export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'logs' }) {
-  const { users, auditLogs, loading, error, refresh, updateUserRole } = useAdminData();
-  const [activeTab, setActiveTab] = useState<'users' | 'logs'>(initialTab);
+export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 'users' | 'requests' | 'logs' }) {
+  const { users, auditLogs, loading, error, refresh, updateUserRole, approveMember, rejectMember } = useAdminData();
+  const [activeTab, setActiveTab] = useState<'users' | 'requests' | 'logs'>(initialTab);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [companyCode, setCompanyCode] = useState<string | null>(null);
 
+  // Filter lists
+  const activeUsers = users.filter(u => u.status === 'active');
+  const pendingUsers = users.filter(u => u.status === 'pending');
+
   useEffect(() => {
+    // ... loadCompany logic ...
     const loadCompany = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -90,7 +95,23 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
           }`}
         >
           <Users className="w-4 h-4" />
-          User Management
+          Active Users ({activeUsers.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`pb-2 px-4 flex items-center gap-2 ${
+            activeTab === 'requests' 
+              ? 'border-b-2 border-blue-600 text-blue-600 font-medium' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Requests
+          {pendingUsers.length > 0 && (
+            <span className="ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+              {pendingUsers.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab('logs')}
@@ -107,6 +128,72 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
 
       {/* Content */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        
+        {/* REQUESTS TAB */}
+        {activeTab === 'requests' && (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested At</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {pendingUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <CheckCircle2 className="w-12 h-12 text-green-100 mb-2" />
+                        <p>Tidak ada permintaan bergabung saat ini.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  pendingUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 font-bold">
+                            <Clock size={20} />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{user.full_name || 'No Name'}</div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(user.created_at).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => approveMember && approveMember(user.user_id)}
+                            className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-1"
+                          >
+                            <UserCheck size={16} />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => rejectMember && rejectMember(user.user_id)}
+                            className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-sm transition-colors flex items-center gap-1"
+                          >
+                            <UserX size={16} />
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* USERS TAB (Active Only) */}
         {activeTab === 'users' && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -120,7 +207,7 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
+                {activeUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -214,4 +301,9 @@ export default function AdminDashboard({ initialTab = 'users' }: { initialTab?: 
       </div>
     </div>
   );
+}
+
+// Helper icon component if missing
+function CheckCircle2(props: any) {
+    return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
 }

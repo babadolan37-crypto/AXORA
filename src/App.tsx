@@ -5,160 +5,64 @@ import { AuthForm } from './components/AuthForm';
 import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
 import { DebtSheet } from './components/DebtSheet';
-// Lazy load SettingsSheet to prevent startup crashes with error handling
-const SettingsSheet = lazy(() => 
-  import('./components/SettingsSheet')
-    .then(module => ({ default: module.SettingsSheet }))
-    .catch(err => {
-      console.error("Failed to load SettingsSheet:", err);
-      return { default: () => <div className="p-8 text-center text-red-600">Gagal memuat komponen Pengaturan. Silakan refresh halaman.</div> };
-    })
-);
+import { SessionTimeout } from './components/SessionTimeout';
+import { WaitingApproval } from './components/WaitingApproval';
+// ... existing imports ...
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
-import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
-import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
-import { BudgetSheet } from './components/BudgetSheet';
-import { InvoiceSheet } from './components/InvoiceSheet';
-import { RecurringSheet } from './components/RecurringSheet';
-import { ApprovalSheet } from './components/ApprovalSheet';
-import { NotificationSheet } from './components/NotificationSheet';
-import { BankReconSheet } from './components/BankReconSheet';
-import { FinancialReportsSheet } from './components/FinancialReportsSheet';
-import AdminDashboard from './components/AdminDashboard';
-import { FixedAssetsSheet } from './components/FixedAssetsSheet';
-import { DashboardLoadingSkeleton } from './components/LoadingSkeleton';
-import { useSupabaseData } from './hooks/useSupabaseData';
-import { useNotifications } from './hooks/useNotifications';
-import { DEFAULT_INCOME_SOURCES, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_PAYMENT_METHODS } from './types/accounting';
+// ... imports ...
 
-type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | ModuleType;
+// ...
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [user, setUser] = useState<User | null>(null);
+  const [userStatus, setUserStatus] = useState<string>('active'); // Add status state
   const [authLoading, setAuthLoading] = useState(true);
   const [dataMigrated, setDataMigrated] = useState(false);
 
-  const {
-    loading,
-    incomeSources,
-    expenseCategories,
-    paymentMethods,
-    employees,
-    incomeEntries,
-    expenseEntries,
-    debtEntries,
-    saveIncomeSources,
-    saveExpenseCategories,
-    savePaymentMethods,
-    saveEmployees,
-    addIncomeEntry,
-    updateIncomeEntry,
-    deleteIncomeEntry,
-    addExpenseEntry,
-    updateExpenseEntry,
-    deleteExpenseEntry,
-    addDebtEntry,
-    updateDebtEntry,
-    deleteDebtEntry,
-    resetAllData, // Add this
-    isOffline,
-  } = useSupabaseData();
+  // ... hooks ...
 
-  // Notifications hook
-  const { unreadCount } = useNotifications();
-
-  // Check auth state
+  // Check auth state and status
   useEffect(() => {
-    // Check Supabase session only (no localStorage)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        if (data) setUserStatus(data.status || 'active');
+      }
+      
       setAuthLoading(false);
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+         const { data } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        if (data) setUserStatus(data.status || 'active');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-      // Logout dari Supabase
-      await supabase.auth.signOut();
-      
-      // Reset state
-      setUser(null);
-    }
-  };
-
-  const handleAuthSuccess = () => {
-    // Refresh auth state from Supabase
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-  };
-
-  // Income handlers
-  const handleAddIncome = async (entry: Omit<any, 'id'>) => {
-    await addIncomeEntry(entry);
-  };
-
-  const handleUpdateIncome = async (id: string, entry: Omit<any, 'id'>) => {
-    await updateIncomeEntry(id, entry);
-  };
-
-  const handleDeleteIncome = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      await deleteIncomeEntry(id);
-    }
-  };
-
-  // Expense handlers
-  const handleAddExpense = async (entry: Omit<any, 'id'>) => {
-    await addExpenseEntry(entry);
-  };
-
-  const handleUpdateExpense = async (id: string, entry: Omit<any, 'id'>) => {
-    await updateExpenseEntry(id, entry);
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      await deleteExpenseEntry(id);
-    }
-  };
-
-  // Debt handlers
-  const handleAddDebt = async (entry: Omit<any, 'id'>) => {
-    await addDebtEntry(entry);
-  };
-
-  const handleUpdateDebt = async (id: string, entry: Omit<any, 'id'>) => {
-    await updateDebtEntry(id, entry);
-  };
-
-  const handleDeleteDebt = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-      await deleteDebtEntry(id);
-    }
-  };
-
-  // Settings handlers
-  const handleUpdateIncomeSources = async (sources: string[]) => {
-    await saveIncomeSources(sources);
-  };
-
-  const handleUpdateExpenseCategories = async (categories: string[]) => {
-    await saveExpenseCategories(categories);
-  };
-
-  const handleUpdatePaymentMethods = async (methods: string[]) => {
-    await savePaymentMethods(methods);
-  };
+  // ...
 
   if (authLoading) {
+    // ... loading UI
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -173,7 +77,13 @@ function App() {
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
+  // CHECK STATUS: If not active, show waiting screen
+  if (userStatus !== 'active') {
+    return <WaitingApproval status={userStatus} onLogout={handleLogout} />;
+  }
+
   if (loading) {
+    // ...
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -186,7 +96,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <SessionTimeout /> {/* Add Session Timeout Monitor */}
       {/* Module Navigator - Sidebar */}
+
       <ModuleNavigator
         activeModule={activeTab as ModuleType}
         onChange={(module) => setActiveTab(module as TabType)}

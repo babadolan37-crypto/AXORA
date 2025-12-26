@@ -1,9 +1,11 @@
-export type UserRole = 'admin' | 'manager' | 'employee' | 'viewer';
+export type UserRole = 'owner' | 'admin' | 'manager' | 'employee' | 'viewer';
+export type UserStatus = 'active' | 'pending' | 'rejected' | 'banned';
 
 export interface UserProfile {
   id: string;
   user_id: string;
   role: UserRole;
+  status?: UserStatus;
   full_name: string | null;
   email: string | null;
   phone: string | null;

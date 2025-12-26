@@ -101,6 +101,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             id: userId,
             company_id: company.id,
             role: 'owner',
+            status: 'active', // Owners are auto-active
             full_name: name || email,
             email
           }, { onConflict: 'id' });
@@ -133,6 +134,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           id: userId,
           company_id: targetCompanyId,
           role: 'employee',
+          status: 'pending', // Joiners are pending
           full_name: name || email,
           email
         }, { onConflict: 'id' });
