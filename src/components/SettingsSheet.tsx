@@ -107,9 +107,11 @@ export function SettingsSheet({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not found');
 
-        // Create company
+        // Create company with unique name
         const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-        const name = "Perusahaan Saya"; // Default name
+        // Use email username to make it unique, e.g. "Perusahaan budi"
+        const username = user.email?.split('@')[0] || 'User';
+        const name = `Perusahaan ${username.charAt(0).toUpperCase() + username.slice(1)}`; 
         
         const { data: newCompany, error: createError } = await supabase
             .from('companies')
