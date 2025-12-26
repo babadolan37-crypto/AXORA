@@ -33,20 +33,16 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setError('');
     
     try {
-      // Use RPC instead of direct table query to bypass RLS for anon users
       const { data, error } = await supabase
-        .rpc('check_company_code', { input_code: companyCode.trim().toUpperCase() });
+        .from('companies')
+        .select('id, name')
+        .eq('code', companyCode.trim().toUpperCase())
+        .maybeSingle();
         
       if (error) throw error;
       
-      // Data is an array of results from RPC function
-      const result = data && data.length > 0 ? data[0] : null;
-      
-      if (result && result.company_exists) {
-        setCheckedCompany({
-            name: result.company_name,
-            id: result.company_id
-        });
+      if (data) {
+        setCheckedCompany(data);
         setError(''); // Clear error if any
       } else {
         setCheckedCompany(null);
@@ -70,14 +66,13 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     // If user already has a company, verify it matches if companyCode is provided
     if (existing?.company_id) {
         if (companyCode.trim()) {
-            // Use RPC to validate match
-            const { data: isValid, error } = await supabase
-                .rpc('validate_user_company', { 
-                    user_uuid: userId, 
-                    input_code: companyCode.trim().toUpperCase() 
-                });
+            const { data: company } = await supabase
+                .from('companies')
+                .select('code')
+                .eq('id', existing.company_id)
+                .maybeSingle();
                 
-            if (error || !isValid) {
+            if (company && company.code !== companyCode.trim().toUpperCase()) {
                 throw new Error('Akun Anda tidak terdaftar pada kode perusahaan ini.');
             }
         }
@@ -122,14 +117,14 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       // Double check if not already checked
       let targetCompanyId = checkedCompany?.id;
       if (!targetCompanyId) {
-          // Use RPC again for safety
-          const { data, error } = await supabase
-            .rpc('check_company_code', { input_code: companyCode.trim().toUpperCase() });
+          const { data: company } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('code', companyCode.trim().toUpperCase())
+            .maybeSingle();
             
-          const result = data && data.length > 0 ? data[0] : null;
-
-          if (error || !result || !result.company_exists) throw new Error('Kode perusahaan tidak valid');
-          targetCompanyId = result.company_id;
+          if (!company) throw new Error('Kode perusahaan tidak valid');
+          targetCompanyId = company.id;
       }
       
       await supabase

@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- Enable RLS for audit_logs
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view their company audit logs" ON audit_logs;
 CREATE POLICY "Users can view their company audit logs" ON audit_logs
   FOR SELECT USING (
     company_id IN (
@@ -21,14 +20,9 @@ CREATE POLICY "Users can view their company audit logs" ON audit_logs
     )
   );
 
--- 2. Backfill existing companies without code (Safety measure)
-UPDATE companies 
-SET code = 'CMP-' || SUBSTRING(id::text, 1, 8) 
-WHERE code IS NULL;
-
--- 3. RPC to check if company code exists (for Registration)
+-- 2. RPC to check if company code exists (for Registration)
 CREATE OR REPLACE FUNCTION check_company_code(input_code TEXT)
-RETURNS TABLE (company_exists BOOLEAN, company_name TEXT, company_id UUID) 
+RETURNS TABLE (exists BOOLEAN, company_name TEXT, company_id UUID) 
 LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   RETURN QUERY 
@@ -39,7 +33,7 @@ BEGIN
 END;
 $$;
 
--- 4. RPC to validate user login against company code
+-- 3. RPC to validate user login against company code
 CREATE OR REPLACE FUNCTION validate_user_company(user_uuid UUID, input_code TEXT)
 RETURNS BOOLEAN 
 LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -62,7 +56,7 @@ BEGIN
 END;
 $$;
 
--- 5. RPC to change company code (Owner only)
+-- 4. RPC to change company code (Owner only)
 CREATE OR REPLACE FUNCTION change_company_code(company_uuid UUID, new_code TEXT, actor_uuid UUID)
 RETURNS JSONB 
 LANGUAGE plpgsql SECURITY DEFINER AS $$

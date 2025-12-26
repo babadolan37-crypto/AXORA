@@ -289,20 +289,32 @@ export function SettingsSheet({
         
         if (authError) throw new Error('Password salah. Verifikasi gagal.');
 
-        // Check uniqueness using RPC to be safe or existing check
-        // Since owner is logged in, they might have read access, but let's stick to standard unique check
-        // The RPC change_company_code handles uniqueness check internally!
-        
-        // Call RPC to update
-        const { data: result, error: rpcError } = await supabase
-            .rpc('change_company_code', {
-                company_uuid: company.id,
-                new_code: newCompanyCode.trim().toUpperCase(),
-                actor_uuid: user.id
-            });
+        // Check uniqueness
+        const { data: existing } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('code', newCompanyCode.trim().toUpperCase())
+            .maybeSingle();
             
-        if (rpcError) throw rpcError;
-        if (!result.success) throw new Error(result.message);
+        if (existing) throw new Error('Kode perusahaan sudah digunakan. Pilih kode lain.');
+
+        // Update
+        const { error: updateError } = await supabase
+            .from('companies')
+            .update({ code: newCompanyCode.trim().toUpperCase() })
+            .eq('id', company.id);
+            
+        if (updateError) throw updateError;
+        
+        // Audit Log (Optional/Best Effort)
+        const { error: auditError } = await supabase.from('audit_logs').insert({
+            company_id: company.id,
+            actor_user_id: user.id,
+            action: 'COMPANY_CODE_CHANGED',
+            metadata: { old_code: company.code, new_code: newCompanyCode.trim().toUpperCase() }
+        });
+        
+        if (auditError) console.error('Audit log failed:', auditError);
 
         alert('Kode perusahaan berhasil diubah!');
         setShowChangeCodeModal(false);
