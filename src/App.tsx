@@ -21,7 +21,6 @@ import AdminDashboard from './components/AdminDashboard';
 import { FixedAssetsSheet } from './components/FixedAssetsSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
-import { AIAnalyst } from './components/AIAnalyst';
 
 // Lazy load SettingsSheet with named export handling
 const SettingsSheet = lazy(() => 
@@ -241,14 +240,6 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-20 lg:ml-64 print:ml-0">
         
-        {/* AI Analyst Floating Button */}
-        {userStatus === 'active' && (
-          <AIAnalyst 
-            incomeEntries={incomeEntries}
-            expenseEntries={expenseEntries}
-          />
-        )}
-
       {/* Offline Banner */}
       {isOffline && (
         <div className="bg-yellow-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium animate-in slide-in-from-top">
