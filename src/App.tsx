@@ -22,14 +22,9 @@ import { FixedAssetsSheet } from './components/FixedAssetsSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
 
-// Lazy load SettingsSheet to prevent startup crashes with error handling
+// Lazy load SettingsSheet with named export handling
 const SettingsSheet = lazy(() => 
-  import('./components/SettingsSheet')
-    .then(module => ({ default: module.SettingsSheet }))
-    .catch(err => {
-      console.error("Failed to load SettingsSheet:", err);
-      return { default: () => <div className="p-8 text-center text-red-600">Gagal memuat komponen Pengaturan. Silakan refresh halaman.</div> };
-    })
+  import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet }))
 );
 
 type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | 'roles' | 'audit' | 'notifications' | ModuleType;
@@ -37,8 +32,27 @@ type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | '
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [user, setUser] = useState<User | null>(null);
-  const [userStatus, setUserStatus] = useState<string>('active'); // Add status state
+  const [userStatus, setUserStatus] = useState<string>('active'); 
   const [authLoading, setAuthLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // Add global error state
+
+  // Error boundary for runtime errors
+  if (error) {
+     return (
+        <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
+           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan Aplikasi</h2>
+              <p className="text-gray-700 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+              >
+                Muat Ulang Halaman
+              </button>
+           </div>
+        </div>
+     );
+  }
 
   const {
     loading,
@@ -65,6 +79,7 @@ function App() {
     resetAllData,
     isOffline,
   } = useSupabaseData();
+
 
   // Notifications hook
   const { unreadCount } = useNotifications();
@@ -214,7 +229,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <SessionTimeout /> {/* Add Session Timeout Monitor */}
       {/* Module Navigator - Sidebar */}
 
       <ModuleNavigator
