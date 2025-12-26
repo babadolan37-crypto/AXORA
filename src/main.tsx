@@ -22,6 +22,15 @@ window.onerror = function(message, source, lineno, colno, error) {
 };
 
 try {
+  // FORCE UNREGISTER SERVICE WORKER to fix caching issues
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) {
+        registration.unregister().then(() => console.log('Service Worker unregistered'));
+      }
+    });
+  }
+
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <ErrorBoundary>
