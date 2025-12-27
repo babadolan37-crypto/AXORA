@@ -86,50 +86,54 @@ function App() {
 
   // Check auth state and status
   useEffect(() => {
-    let isMounted = true;
-    
-    // Timeout safeguard: Force stop loading after 5 seconds if Supabase is slow
-    const timeoutId = setTimeout(() => {
-      if (isMounted && authLoading) {
-        console.warn('Auth check timed out, forcing login screen');
-        setAuthLoading(false);
-      }
-    }, 5000);
-
     const checkAuth = async () => {
       try {
-        // Add timeout to getSession
-        const sessionPromise = supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 4000)
+          setTimeout(() => reject(new Error('Auth timeout')), 5000)
         );
 
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        
-        if (!isMounted) return;
+        const authPromise = (async () => {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error("Session error:", error);
+            return;
+          }
 
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        
-        if (currentUser) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('status')
-            .eq('id', currentUser.id)
-            .maybeSingle();
-          if (isMounted && data) setUserStatus(data.status || 'active');
-        }
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          
+          if (currentUser) {
+            try {
+              const { data, error: profileError } = await supabase
+                .from('profiles')
+                .select('status')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+              
+              if (profileError) {
+                console.error("Profile fetch error:", profileError);
+              }
+              if (data) setUserStatus(data.status || 'active');
+            } catch (err) {
+              console.error("Profile check failed:", err);
+            }
+          }
+        })();
+
+        await Promise.race([authPromise, timeoutPromise]);
       } catch (err) {
-        console.error('Auth check error:', err);
+        console.error("Auth check failed or timed out:", err);
+        // If timeout or error, we stop loading and let user try to login or see empty state
+        // If they were actually logged in, the auth state change listener might catch it later
       } finally {
-        if (isMounted) setAuthLoading(false);
+        setAuthLoading(false);
       }
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return;
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -138,15 +142,11 @@ function App() {
           .select('status')
           .eq('id', currentUser.id)
           .maybeSingle();
-        if (isMounted && data) setUserStatus(data.status || 'active');
+        if (data) setUserStatus(data.status || 'active');
       }
     });
 
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
