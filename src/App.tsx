@@ -86,26 +86,50 @@ function App() {
 
   // Check auth state and status
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      
-      if (currentUser) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('status')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-        if (data) setUserStatus(data.status || 'active');
+    let isMounted = true;
+    
+    // Timeout safeguard: Force stop loading after 5 seconds if Supabase is slow
+    const timeoutId = setTimeout(() => {
+      if (isMounted && authLoading) {
+        console.warn('Auth check timed out, forcing login screen');
+        setAuthLoading(false);
       }
-      
-      setAuthLoading(false);
+    }, 5000);
+
+    const checkAuth = async () => {
+      try {
+        // Add timeout to getSession
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 4000)
+        );
+
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        
+        if (!isMounted) return;
+
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        if (currentUser) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          if (isMounted && data) setUserStatus(data.status || 'active');
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+      } finally {
+        if (isMounted) setAuthLoading(false);
+      }
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -114,11 +138,15 @@ function App() {
           .select('status')
           .eq('id', currentUser.id)
           .maybeSingle();
-        if (data) setUserStatus(data.status || 'active');
+        if (isMounted && data) setUserStatus(data.status || 'active');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
