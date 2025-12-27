@@ -2,30 +2,28 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AuthForm } from './components/AuthForm';
-import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
-import { DebtSheet } from './components/DebtSheet';
 import { SessionTimeout } from './components/SessionTimeout';
 import { WaitingApproval } from './components/WaitingApproval';
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
-import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
 import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
-import { BudgetSheet } from './components/BudgetSheet';
-import { InvoiceSheet } from './components/InvoiceSheet';
-import { RecurringSheet } from './components/RecurringSheet';
-import { ApprovalSheet } from './components/ApprovalSheet';
-import { NotificationSheet } from './components/NotificationSheet';
-import { BankReconSheet } from './components/BankReconSheet';
-import { FinancialReportsSheet } from './components/FinancialReportsSheet';
-import AdminDashboard from './components/AdminDashboard';
-import { FixedAssetsSheet } from './components/FixedAssetsSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
 
-// Lazy load SettingsSheet with named export handling
-const SettingsSheet = lazy(() => 
-  import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet }))
-);
+// Lazy load components for performance
+const SettingsSheet = lazy(() => import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet })));
+const TransactionSheet = lazy(() => import('./components/TransactionSheet').then(module => ({ default: module.TransactionSheet })));
+const BudgetSheet = lazy(() => import('./components/BudgetSheet').then(module => ({ default: module.BudgetSheet })));
+const FinancialReportsSheet = lazy(() => import('./components/FinancialReportsSheet').then(module => ({ default: module.FinancialReportsSheet })));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const BankReconSheet = lazy(() => import('./components/BankReconSheet').then(module => ({ default: module.BankReconSheet })));
+const FixedAssetsSheet = lazy(() => import('./components/FixedAssetsSheet').then(module => ({ default: module.FixedAssetsSheet })));
+const AdvanceReimbursementSheet = lazy(() => import('./components/AdvanceReimbursementSheet').then(module => ({ default: module.AdvanceReimbursementSheet })));
+const DebtSheet = lazy(() => import('./components/DebtSheet').then(module => ({ default: module.DebtSheet })));
+const RecurringSheet = lazy(() => import('./components/RecurringSheet').then(module => ({ default: module.RecurringSheet })));
+const InvoiceSheet = lazy(() => import('./components/InvoiceSheet').then(module => ({ default: module.InvoiceSheet })));
+const ApprovalSheet = lazy(() => import('./components/ApprovalSheet').then(module => ({ default: module.ApprovalSheet })));
+const NotificationSheet = lazy(() => import('./components/NotificationSheet').then(module => ({ default: module.NotificationSheet })));
 
 type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | 'roles' | 'audit' | 'notifications' | ModuleType;
 
@@ -316,75 +314,75 @@ function App() {
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 w-full">
-          {activeTab === 'transaction' && (
-            <TransactionSheet
-              incomeEntries={incomeEntries}
-              expenseEntries={expenseEntries}
-              incomeSources={incomeSources}
-              expenseCategories={expenseCategories}
-              paymentMethods={paymentMethods}
-              employees={employees}
-              onAddIncome={handleAddIncome}
-              onUpdateIncome={handleUpdateIncome}
-              onDeleteIncome={handleDeleteIncome}
-              onAddExpense={handleAddExpense}
-              onUpdateExpense={handleUpdateExpense}
-              onDeleteExpense={handleDeleteExpense}
-            />
-          )}
-          {activeTab === 'dashboard' && (
-            <DashboardSheet
-              incomeEntries={incomeEntries}
-              expenseEntries={expenseEntries}
-              expenseCategories={expenseCategories}
-              employees={employees}
-            />
-          )}
-          {activeTab === 'budget' && (
-            <BudgetSheet
-              incomeEntries={incomeEntries}
-              expenseEntries={expenseEntries}
-              expenseCategories={expenseCategories}
-              incomeSources={incomeSources}
-            />
-          )}
-          {activeTab === 'invoice' && <InvoiceSheet />}
-          {activeTab === 'recurring' && (
-            <RecurringSheet
-              expenseCategories={expenseCategories}
-              incomeSources={incomeSources}
-              employees={employees}
-            />
-          )}
-          {activeTab === 'approval' && <ApprovalSheet />}
-          {activeTab === 'bank-recon' && <BankReconSheet />}
-          {activeTab === 'financial-reports' && (
-            <FinancialReportsSheet
-              incomeEntries={incomeEntries}
-              expenseEntries={expenseEntries}
-              debtEntries={debtEntries}
-            />
-          )}
-          {activeTab === 'fixed-assets' && <FixedAssetsSheet />}
-          {activeTab === 'debt' && (
-            <DebtSheet
-              entries={debtEntries}
-              onAddEntry={handleAddDebt}
-              onUpdateEntry={handleUpdateDebt}
-              onDeleteEntry={handleDeleteDebt}
-            />
-          )}
-          {activeTab === 'advance' && (
-            <AdvanceReimbursementSheet
-              employees={employees}
-            />
-          )}
-          {activeTab === 'admin' && <AdminDashboard />}
-          {activeTab === 'roles' && <AdminDashboard initialTab="users" />}
-          {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
-          {activeTab === 'notifications' && <NotificationSheet />}
-          {activeTab === 'settings' && (
-            <Suspense fallback={<div className="p-8 text-center flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>}>
+          <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
+            {activeTab === 'transaction' && (
+              <TransactionSheet
+                incomeEntries={incomeEntries}
+                expenseEntries={expenseEntries}
+                incomeSources={incomeSources}
+                expenseCategories={expenseCategories}
+                paymentMethods={paymentMethods}
+                employees={employees}
+                onAddIncome={handleAddIncome}
+                onUpdateIncome={handleUpdateIncome}
+                onDeleteIncome={handleDeleteIncome}
+                onAddExpense={handleAddExpense}
+                onUpdateExpense={handleUpdateExpense}
+                onDeleteExpense={handleDeleteExpense}
+              />
+            )}
+            {activeTab === 'dashboard' && (
+              <DashboardSheet
+                incomeEntries={incomeEntries}
+                expenseEntries={expenseEntries}
+                expenseCategories={expenseCategories}
+                employees={employees}
+              />
+            )}
+            {activeTab === 'budget' && (
+              <BudgetSheet
+                incomeEntries={incomeEntries}
+                expenseEntries={expenseEntries}
+                expenseCategories={expenseCategories}
+                incomeSources={incomeSources}
+              />
+            )}
+            {activeTab === 'invoice' && <InvoiceSheet />}
+            {activeTab === 'recurring' && (
+              <RecurringSheet
+                expenseCategories={expenseCategories}
+                incomeSources={incomeSources}
+                employees={employees}
+              />
+            )}
+            {activeTab === 'approval' && <ApprovalSheet />}
+            {activeTab === 'bank-recon' && <BankReconSheet />}
+            {activeTab === 'financial-reports' && (
+              <FinancialReportsSheet
+                incomeEntries={incomeEntries}
+                expenseEntries={expenseEntries}
+                debtEntries={debtEntries}
+              />
+            )}
+            {activeTab === 'fixed-assets' && <FixedAssetsSheet />}
+            {activeTab === 'debt' && (
+              <DebtSheet
+                entries={debtEntries}
+                onAddEntry={handleAddDebt}
+                onUpdateEntry={handleUpdateDebt}
+                onDeleteEntry={handleDeleteDebt}
+              />
+            )}
+            {activeTab === 'advance' && (
+              <AdvanceReimbursementSheet
+                employees={employees}
+              />
+            )}
+            {activeTab === 'admin' && <AdminDashboard />}
+            {activeTab === 'roles' && <AdminDashboard initialTab="users" />}
+            {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
+            {activeTab === 'notifications' && <NotificationSheet />}
+            {activeTab === 'settings' && (
               <SettingsSheet
                 incomeSources={incomeSources}
                 expenseCategories={expenseCategories}
@@ -398,8 +396,8 @@ function App() {
                 onNavigateToRoles={() => setActiveTab('roles')}
                 onNavigateToAudit={() => setActiveTab('audit')}
               />
-            </Suspense>
-          )}
+            )}
+          </Suspense>
         </div>
       </div>
     </div>
