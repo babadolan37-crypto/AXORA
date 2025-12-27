@@ -21,6 +21,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { FixedAssetsSheet } from './components/FixedAssetsSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
+import { FinancialAnalyst } from './components/FinancialAnalyst';
 
 // Lazy load SettingsSheet with named export handling
 const SettingsSheet = lazy(() => 
@@ -227,6 +228,10 @@ function App() {
     );
   }
 
+  // Calculate totals for AI Analyst
+  const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Module Navigator - Sidebar */}
@@ -240,6 +245,18 @@ function App() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ml-20 lg:ml-64 print:ml-0">
         
+        {/* AI Financial Analyst */}
+        {userStatus === 'active' && (
+          <FinancialAnalyst 
+            summary={{
+              totalIncome,
+              totalExpense,
+              netProfit: totalIncome - totalExpense,
+              expenseCount: expenseEntries.length
+            }} 
+          />
+        )}
+
       {/* Offline Banner */}
       {isOffline && (
         <div className="bg-yellow-500 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium animate-in slide-in-from-top">
