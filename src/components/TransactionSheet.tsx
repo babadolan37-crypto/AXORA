@@ -5,11 +5,14 @@ import { Plus, Trash2, Camera, TrendingUp, TrendingDown, Scan, Wallet, ArrowRigh
   X,
   Pencil,
   Image as ImageIcon,
-  Download
+  Download,
+  MessageCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
+import { sendWhatsApp } from '../services/whatsapp';
+
 import { PhotoViewer } from './PhotoViewer';
 import { OCRScanner } from './OCRScanner';
 import { UniversalTransactionForm } from './UniversalTransactionForm';
@@ -298,6 +301,22 @@ export function TransactionSheet({
     }
 
     resetForm();
+  };
+
+  const handleNotifyOwner = async (entry: ExpenseEntry) => {
+    // Nomor HP Owner (Hardcoded sementara, nanti bisa dari database)
+    const ownerPhone = '087785584654'; 
+    const message = `*Notifikasi Pengeluaran Baru*\n\n` +
+      `Kategori: ${entry.category}\n` +
+      `Jumlah: Rp ${entry.amount.toLocaleString('id-ID')}\n` +
+      `Keterangan: ${entry.description}\n` +
+      `Tanggal: ${entry.date}\n\n` +
+      `Mohon dicek di dashboard Axora.`;
+      
+    if (confirm('Kirim notifikasi WA ke Owner?')) {
+       await sendWhatsApp(ownerPhone, message);
+       alert('Notifikasi terkirim ke Owner!');
+    }
   };
 
   const handleEdit = (entry: IncomeEntry | ExpenseEntry) => {
@@ -1139,6 +1158,13 @@ export function TransactionSheet({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleNotifyOwner(entry as ExpenseEntry)}
+                          className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
+                          title="Lapor ke Owner"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
                         <button
                           onClick={() => handleEdit(entry)}
                           className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
