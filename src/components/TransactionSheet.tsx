@@ -211,7 +211,7 @@ export function TransactionSheet({
     setIsFormOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -296,7 +296,23 @@ export function TransactionSheet({
       if (editingId) {
         onUpdateExpense(editingId, entry);
       } else {
-        onAddExpense(entry);
+        await onAddExpense(entry);
+        
+        // AUTO-NOTIFY OWNER (Feature: Real-time Notification)
+        try {
+          const ownerPhone = '087785584654'; 
+          const message = `*Laporan Pengeluaran Baru*\n\n` +
+            `Kategori: ${entry.category}\n` +
+            `Jumlah: Rp ${entry.amount.toLocaleString('id-ID')}\n` +
+            `Kepada: ${entry.paidTo || '-'}\n` +
+            `Keterangan: ${entry.description}\n` +
+            `Tanggal: ${entry.date}\n\n` +
+            `_Notifikasi otomatis dari Axora_`;
+            
+          sendWhatsApp(ownerPhone, message).catch(err => console.error('Auto-WA Error:', err));
+        } catch (e) {
+          console.error('Failed to send auto-notification', e);
+        }
       }
     }
 

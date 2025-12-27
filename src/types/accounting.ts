@@ -34,6 +34,7 @@ export interface DebtEntry {
   dueDate: string;
   paymentStatus: 'Lunas' | 'Tertunda';
   notes?: string;
+  clientPhone?: string; // Nomor WA untuk notifikasi otomatis
   paymentDate?: string;
   status?: string; // For backward compatibility if needed
 }

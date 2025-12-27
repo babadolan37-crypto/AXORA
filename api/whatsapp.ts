@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server';
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-export async function POST(req: Request) {
   try {
-    const { target, message } = await req.json();
+    const { target, message } = req.body;
     
     // Server-side call to Fonnte (Secure)
     const response = await fetch('https://api.fonnte.com/send', {
@@ -19,8 +21,9 @@ export async function POST(req: Request) {
     });
 
     const result = await response.json();
-    return NextResponse.json(result);
+    return res.status(200).json(result);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to send WA' }, { status: 500 });
+    console.error('WA Send Error:', error);
+    return res.status(500).json({ error: 'Failed to send WA' });
   }
 }

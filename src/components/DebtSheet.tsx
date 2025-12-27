@@ -23,6 +23,7 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
     date: new Date().toISOString().split('T')[0],
     dueDate: '',
     paymentStatus: 'Tertunda' as 'Lunas' | 'Tertunda',
+    clientPhone: '',
     notes: ''
   });
 
@@ -36,6 +37,7 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
       date: formData.date,
       dueDate: formData.dueDate,
       paymentStatus: formData.paymentStatus,
+      clientPhone: formData.clientPhone,
       notes: formData.notes
     };
 
@@ -54,6 +56,7 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
       date: new Date().toISOString().split('T')[0],
       dueDate: '',
       paymentStatus: 'Tertunda',
+      clientPhone: '',
       notes: ''
     });
     setIsFormOpen(false);
@@ -68,6 +71,7 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
       date: entry.date,
       dueDate: entry.dueDate,
       paymentStatus: entry.paymentStatus,
+      clientPhone: entry.clientPhone || '',
       notes: entry.notes || ''
     });
     setEditingId(entry.id);
@@ -114,6 +118,7 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
               date: new Date().toISOString().split('T')[0],
               dueDate: '',
               paymentStatus: 'Tertunda',
+              clientPhone: '',
               notes: ''
             });
           }}
@@ -170,6 +175,19 @@ export function DebtSheet({ entries, onAddEntry, onUpdateEntry, onDeleteEntry }:
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Nama pihak terkait"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                No. HP / WA (untuk Reminder)
+              </label>
+              <input
+                type="text"
+                value={formData.clientPhone}
+                onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="08xxxxxxxxxx"
               />
             </div>
 

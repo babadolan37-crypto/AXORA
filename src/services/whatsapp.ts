@@ -1,15 +1,13 @@
 export const sendWhatsApp = async (target: string, message: string) => {
   try {
-    const response = await fetch('https://api.fonnte.com/send', {
+    const response = await fetch('/api/whatsapp', {
       method: 'POST',
       headers: {
-        'Authorization': process.env.FONNTE_TOKEN || 'QJidkbhS7fHcmmJ24bQi', // Fallback for dev
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         target,
         message,
-        countryCode: '62', // Default to Indonesia
       }),
     });
 
