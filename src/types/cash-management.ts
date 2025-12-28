@@ -8,6 +8,7 @@ export interface CashBalance {
   cashType: CashType;
   balance: number;
   lastUpdated: string;
+  lowBalanceThreshold: number;
 }
 
 // Riwayat Transaksi Kas

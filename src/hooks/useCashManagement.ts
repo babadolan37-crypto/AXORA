@@ -7,7 +7,8 @@ const mapBalanceFromDb = (dbBalance: any): CashBalance => ({
   id: dbBalance.id,
   cashType: dbBalance.cash_type,
   balance: dbBalance.balance,
-  lastUpdated: dbBalance.last_updated
+  lastUpdated: dbBalance.last_updated,
+  lowBalanceThreshold: dbBalance.low_balance_threshold || 0
 });
 
 const mapTransactionFromDb = (dbTransaction: any): CashTransaction => ({
@@ -427,6 +428,34 @@ export function useCashManagement() {
     }
   };
 
+  const setLowBalanceThreshold = async (cashType: CashType, threshold: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const balance = balances.find((b: CashBalance) => b.cashType === cashType);
+      if (!balance) return;
+
+      const { data, error } = await supabase
+        .from('cash_balances')
+        .update({
+          low_balance_threshold: threshold,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', balance.id)
+        .eq('user_id', user.id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+
+      setBalances((prev: CashBalance[]) => prev.map((b: CashBalance) => b.id === balance.id ? mapBalanceFromDb(data) : b));
+    } catch (error) {
+      console.error('Error setting low balance threshold:', error);
+      throw error;
+    }
+  };
+
   return {
     loading,
     transactions,
@@ -434,6 +463,7 @@ export function useCashManagement() {
     addTransaction,
     deleteTransaction,
     setBalance,
+    setLowBalanceThreshold,
     addInterCashTransfer,
     transferCash: addInterCashTransfer, // Alias untuk QuickCashTransferModal
     refreshData: loadData

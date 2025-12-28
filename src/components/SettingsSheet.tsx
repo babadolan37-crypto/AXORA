@@ -158,7 +158,7 @@ export function SettingsSheet({
   };
 
   // Cash balance settings
-  const { balances, setBalance } = useCashManagement();
+  const { balances, setBalance, setLowBalanceThreshold: saveLowBalanceThreshold } = useCashManagement();
   const [bigCashBalance, setBigCashBalance] = useState('');
   const [smallCashBalance, setSmallCashBalance] = useState('');
   const [lowBalanceThreshold, setLowBalanceThreshold] = useState('1000000');
@@ -168,11 +168,18 @@ export function SettingsSheet({
   useEffect(() => {
     const bigBalance = balances.find(b => b.cashType === 'big')?.balance || 0;
     const smallBalance = balances.find(b => b.cashType === 'small')?.balance || 0;
+    
+    // Get max threshold from either balance (assuming they are synced)
+    const bigThreshold = balances.find(b => b.cashType === 'big')?.lowBalanceThreshold || 0;
+    const smallThreshold = balances.find(b => b.cashType === 'small')?.lowBalanceThreshold || 0;
+    const threshold = Math.max(bigThreshold, smallThreshold);
+
     setBigCashBalance(bigBalance.toString());
     setSmallCashBalance(smallBalance.toString());
-
-    // Load threshold from localStorage - REMOVED for Cloud-Only Policy
-    // Default is 1000000
+    
+    if (threshold > 0) {
+      setLowBalanceThreshold(threshold.toString());
+    }
   }, [balances]);
 
   const handleAddIncomeSource = (e: React.FormEvent) => {

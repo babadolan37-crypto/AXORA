@@ -175,9 +175,8 @@ export function DashboardSheet({
   const totalCash = bigCashBalance + smallCashBalance;
 
   // Low balance thresholds
-  // TODO: Get from user settings
-  const lowBalanceThresholdBig = 0;
-  const lowBalanceThresholdSmall = 0;
+  const lowBalanceThresholdBig = balances.find((b) => b.cashType === 'big')?.lowBalanceThreshold || 0;
+  const lowBalanceThresholdSmall = balances.find((b) => b.cashType === 'small')?.lowBalanceThreshold || 0;
 
   // Cash transactions summary
   const cashIncome = useMemo(() => {
