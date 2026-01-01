@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   try {
     // 1. Setup Supabase
     // Note: In Vercel Serverless, use process.env
@@ -71,6 +71,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Cron Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 }
