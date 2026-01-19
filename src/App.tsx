@@ -250,6 +250,12 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat data...</p>
+          <button 
+             onClick={() => window.location.reload()}
+             className="mt-4 text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Lama memuat? Klik untuk segarkan
+          </button>
         </div>
       </div>
     );

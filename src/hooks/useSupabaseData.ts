@@ -98,7 +98,23 @@ export function useSupabaseData(sessionUser?: User | null) {
   // Load all data
   useEffect(() => {
     if (!user) return;
-    loadAllData();
+    
+    // Safety timeout: If loadAllData hangs for > 15 seconds, force stop loading
+    const safetyTimeout = setTimeout(() => {
+        setLoading((currentLoading) => {
+            if (currentLoading) {
+                console.warn('⚠️ Safety timeout triggered: Forcing loading to false');
+                return false;
+            }
+            return currentLoading;
+        });
+    }, 15000);
+
+    loadAllData().finally(() => {
+        clearTimeout(safetyTimeout);
+    });
+    
+    return () => clearTimeout(safetyTimeout);
   }, [user, companyId]);
 
   // Listen for cashBalanceUpdated event to reload entries
