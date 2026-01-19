@@ -15,6 +15,7 @@ import {
   X,
   Shield,
   Box,
+  Banknote,
 } from 'lucide-react';
 
 export type ModuleType =
@@ -33,7 +34,8 @@ export type ModuleType =
   | 'fixed-assets'
   | 'advance'
   | 'admin'
-  | 'settings';
+  | 'settings'
+  | 'payroll';
 
 interface ModuleNavigatorProps {
   activeModule: ModuleType;
@@ -102,6 +104,13 @@ const MODULES = [
     label: 'Transaksi Berulang',
     icon: RefreshCcw,
     badge: null,
+    category: 'Financial',
+  },
+  {
+    id: 'payroll' as ModuleType,
+    label: 'Slip Gaji',
+    icon: Banknote,
+    badge: 'Baru',
     category: 'Financial',
   },
   {

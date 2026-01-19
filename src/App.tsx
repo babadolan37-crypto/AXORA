@@ -19,6 +19,7 @@ import { BankReconSheet } from './components/BankReconSheet';
 import { FinancialReportsSheet } from './components/FinancialReportsSheet';
 import AdminDashboard from './components/AdminDashboard';
 import { FixedAssetsSheet } from './components/FixedAssetsSheet';
+import { PayrollSheet } from './components/PayrollSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
 
@@ -377,6 +378,7 @@ function App() {
               employees={employees}
             />
           )}
+          {activeTab === 'payroll' && <PayrollSheet />}
           {activeTab === 'approval' && <ApprovalSheet />}
           {activeTab === 'bank-recon' && <BankReconSheet />}
           {activeTab === 'financial-reports' && (
