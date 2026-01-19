@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Printer, Trash2, Edit2, User, Calendar, DollarSign, Save, X, FileText } from 'lucide-react';
+import { Plus, Search, Printer, Trash2, Edit2, User, Users, Calendar, DollarSign, Save, X, FileText } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -32,6 +32,31 @@ export function PayrollSheet() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [printingSlip, setPrintingSlip] = useState<SalarySlip | null>(null);
+  const [companyName, setCompanyName] = useState('PT. KARYA ABADI');
+  
+  // Load company name
+  useEffect(() => {
+    const fetchCompany = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (profile?.company_id) {
+        const { data: comp } = await supabase
+          .from('companies')
+          .select('name')
+          .eq('id', profile.company_id)
+          .maybeSingle();
+        if (comp?.name) setCompanyName(comp.name);
+      }
+    };
+    fetchCompany();
+  }, []);
   
   // Form State
   const [formData, setFormData] = useState<Partial<SalarySlip>>({
@@ -191,7 +216,7 @@ export function PayrollSheet() {
                         <p className="text-gray-600">Periode: {printingSlip.period}</p>
                     </div>
                     <div className="text-right">
-                        <h2 className="text-xl font-bold">PT. KARYA ABADI</h2>
+                        <h2 className="text-xl font-bold">{companyName}</h2>
                         <p className="text-sm text-gray-500">Jl. Contoh No. 123, Jakarta</p>
                     </div>
                 </div>
