@@ -80,10 +80,19 @@ export function PayrollSheet() {
   const loadSlips = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Add timeout to fetch
+      const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 15000)
+      );
+
+      const fetchPromise = supabase
         .from('salary_slips')
         .select('*')
         .order('date', { ascending: false });
+
+      // @ts-ignore
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
         
       if (error) {
         // If table doesn't exist yet, we just show empty
@@ -92,12 +101,14 @@ export function PayrollSheet() {
             setSlips([]);
         } else {
             console.error('Error loading slips:', error);
+            toast.error('Gagal memuat data slip gaji');
         }
       } else {
         setSlips(data || []);
       }
     } catch (err) {
       console.error(err);
+      toast.error('Koneksi lambat. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -402,7 +413,12 @@ export function PayrollSheet() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {loading ? (
-                        <tr><td colSpan={8} className="p-8 text-center">Memuat data...</td></tr>
+                        <tr><td colSpan={8} className="p-8 text-center">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                                <span className="text-gray-500">Memuat data...</span>
+                            </div>
+                        </td></tr>
                     ) : slips.length === 0 ? (
                         <tr><td colSpan={8} className="p-8 text-center text-gray-500">Belum ada slip gaji dibuat.</td></tr>
                     ) : (

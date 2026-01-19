@@ -52,7 +52,7 @@ export function useSupabaseData(sessionUser?: User | null) {
     const checkAuth = async () => {
       try {
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth check timed out')), 5000)
+          setTimeout(() => reject(new Error('Auth check timed out')), 20000)
         );
 
         const { data } = await Promise.race([
@@ -99,7 +99,7 @@ export function useSupabaseData(sessionUser?: User | null) {
   useEffect(() => {
     if (!user) return;
     
-    // Safety timeout: If loadAllData hangs for > 15 seconds, force stop loading
+    // Safety timeout: If loadAllData hangs for > 30 seconds, force stop loading
     const safetyTimeout = setTimeout(() => {
         setLoading((currentLoading) => {
             if (currentLoading) {
@@ -108,7 +108,7 @@ export function useSupabaseData(sessionUser?: User | null) {
             }
             return currentLoading;
         });
-    }, 15000);
+    }, 30000);
 
     loadAllData().finally(() => {
         clearTimeout(safetyTimeout);
@@ -146,7 +146,7 @@ export function useSupabaseData(sessionUser?: User | null) {
     
     // Create a timeout promise to prevent infinite loading
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Data loading timed out')), 10000)
+      setTimeout(() => reject(new Error('Data loading timed out')), 25000)
     );
 
     try {
