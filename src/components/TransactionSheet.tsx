@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, Camera, TrendingUp, TrendingDown, Scan, Wallet, ArrowRightLeft,
   Eye,
   EyeOff,
@@ -8,13 +8,13 @@ import { Plus, Trash2, Camera, TrendingUp, TrendingDown, Scan, Wallet, ArrowRigh
   Download,
   MessageCircle
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { IncomeEntry, ExpenseEntry } from '../types/accounting';
 import { sendWhatsApp } from '../services/whatsapp';
 
 import { PhotoViewer } from './PhotoViewer';
-// Lazy load OCRScanner to reduce initial bundle size
-const OCRScanner = lazy(() => import('./OCRScanner').then(module => ({ default: module.OCRScanner })));
+import { OCRScanner } from './OCRScanner';
 import { UniversalTransactionForm } from './UniversalTransactionForm';
 import { QuickCashTransferModal } from './QuickCashTransferModal';
 import { CashDashboard } from './CashDashboard';
@@ -368,10 +368,7 @@ export function TransactionSheet({
     setIsFormOpen(true);
   };
 
-  const exportToExcel = async () => {
-    // Lazy load XLSX only when needed
-    const XLSX = await import('xlsx');
-
+  const exportToExcel = () => {
     // 1. Prepare Data
     const dataToExport = filteredEntries.map(entry => {
       const isIncome = 'source' in entry;
@@ -1223,17 +1220,10 @@ export function TransactionSheet({
 
       {/* OCR Scanner */}
       {ocrScannerOpen && (
-        <Suspense fallback={
-          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 text-white">
-            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p>Memuat Kamera Cerdas...</p>
-          </div>
-        }>
-          <OCRScanner
-            onExtractComplete={handleOCRComplete}
-            onClose={() => setOcrScannerOpen(false)}
-          />
-        </Suspense>
+        <OCRScanner
+          onExtractComplete={handleOCRComplete}
+          onClose={() => setOcrScannerOpen(false)}
+        />
       )}
 
       {/* Universal Transaction Form (formerly Small Cash Transfer Form) */}

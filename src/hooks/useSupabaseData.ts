@@ -5,8 +5,10 @@ import { DEFAULT_INCOME_SOURCES, DEFAULT_EXPENSE_CATEGORIES, DEFAULT_PAYMENT_MET
 import type { User } from '@supabase/gotrue-js';
 import { useAuditLog } from './useAuditLog';
 
-export function useSupabaseData() {
-  const [user, setUser] = useState<User | null>(null);
+export function useSupabaseData(sessionUser?: User | null) {
+  const [internalUser, setInternalUser] = useState<User | null>(null);
+  const user = sessionUser !== undefined ? sessionUser : internalUser;
+
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -25,23 +27,73 @@ export function useSupabaseData() {
 
   // Get current user and company from Supabase
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user || null);
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('company_id')
-          .eq('id', user.id)
-          .maybeSingle();
-        setCompanyId(profile?.company_id || null);
+    // If user is provided via props, we don't need to check auth internally
+    // But we still need to load profile/companyId if user exists
+    if (sessionUser !== undefined) {
+      if (sessionUser) {
+        const loadProfile = async () => {
+           const { data: profile } = await supabase
+             .from('profiles')
+             .select('company_id')
+             .eq('id', sessionUser.id)
+             .maybeSingle();
+           setCompanyId(profile?.company_id || null);
+        };
+        loadProfile();
       } else {
         setCompanyId(null);
+        setLoading(false);
+      }
+      return;
+    }
+
+    let isMounted = true;
+    
+    const checkAuth = async () => {
+      try {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth check timed out')), 5000)
+        );
+
+        const { data } = await Promise.race([
+          supabase.auth.getUser(),
+          timeoutPromise
+        ]) as { data: { user: User | null } };
+
+        if (!isMounted) return;
+
+        const user = data?.user || null;
+        setInternalUser(user);
+        
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_id')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (isMounted) setCompanyId(profile?.company_id || null);
+        } else {
+          if (isMounted) {
+            setCompanyId(null);
+            // If no user, we are done loading (nothing to load)
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error('Auth check error in hook:', err);
+        if (isMounted) {
+            setInternalUser(null);
+            setCompanyId(null);
+            setLoading(false);
+        }
       }
     };
 
     checkAuth();
-  }, []);
+    
+    return () => { isMounted = false; };
+  }, [sessionUser]);
 
   // Load all data
   useEffect(() => {
@@ -75,13 +127,23 @@ export function useSupabaseData() {
     }
 
     setLoading(true);
+    
+    // Create a timeout promise to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Data loading timed out')), 10000)
+    );
+
     try {
       // PHASE 1: Load CRITICAL data first (settings only)
-      await Promise.all([
-        loadIncomeSources(),
-        loadExpenseCategories(),
-        loadPaymentMethods(),
-        loadEmployees(),
+      // Wrap in Promise.race with timeout
+      await Promise.race([
+        Promise.all([
+          loadIncomeSources(),
+          loadExpenseCategories(),
+          loadPaymentMethods(),
+          loadEmployees(),
+        ]),
+        timeoutPromise
       ]);
 
       // Set loading to false immediately after settings loaded
@@ -91,11 +153,15 @@ export function useSupabaseData() {
       // PHASE 2: Load HEAVY data in background (non-blocking)
       // This happens after user sees the interface
       setTimeout(async () => {
-        await Promise.all([
-          loadIncomeEntries(),
-          loadExpenseEntries(),
-          loadDebtEntries(),
-        ]);
+        try {
+          await Promise.all([
+            loadIncomeEntries(),
+            loadExpenseEntries(),
+            loadDebtEntries(),
+          ]);
+        } catch (bgError) {
+          console.error('Background data load error:', bgError);
+        }
       }, 100); // Small delay to let UI render first
 
     } catch (error) {
@@ -105,6 +171,8 @@ export function useSupabaseData() {
       if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST205') {
         console.warn('⚠️ SUPABASE TABLES NOT FOUND - Setup required!');
       }
+      
+      // Force stop loading even on error
       setLoading(false);
     }
   };

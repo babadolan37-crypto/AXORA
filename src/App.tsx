@@ -2,28 +2,30 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { AuthForm } from './components/AuthForm';
+import { TransactionSheet } from './components/TransactionSheet';
 import { DashboardSheet } from './components/DashboardSheet';
+import { DebtSheet } from './components/DebtSheet';
 import { SessionTimeout } from './components/SessionTimeout';
 import { WaitingApproval } from './components/WaitingApproval';
 import { FileSpreadsheet, Settings, LogOut, Bell, WifiOff } from 'lucide-react';
+import { AdvanceReimbursementSheet } from './components/AdvanceReimbursementSheet';
 import { ModuleNavigator, ModuleType } from './components/ModuleNavigator';
+import { BudgetSheet } from './components/BudgetSheet';
+import { InvoiceSheet } from './components/InvoiceSheet';
+import { RecurringSheet } from './components/RecurringSheet';
+import { ApprovalSheet } from './components/ApprovalSheet';
+import { NotificationSheet } from './components/NotificationSheet';
+import { BankReconSheet } from './components/BankReconSheet';
+import { FinancialReportsSheet } from './components/FinancialReportsSheet';
+import AdminDashboard from './components/AdminDashboard';
+import { FixedAssetsSheet } from './components/FixedAssetsSheet';
 import { useSupabaseData } from './hooks/useSupabaseData';
 import { useNotifications } from './hooks/useNotifications';
 
-// Lazy load components for performance
-const SettingsSheet = lazy(() => import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet })));
-const TransactionSheet = lazy(() => import('./components/TransactionSheet').then(module => ({ default: module.TransactionSheet })));
-const BudgetSheet = lazy(() => import('./components/BudgetSheet').then(module => ({ default: module.BudgetSheet })));
-const FinancialReportsSheet = lazy(() => import('./components/FinancialReportsSheet').then(module => ({ default: module.FinancialReportsSheet })));
-const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
-const BankReconSheet = lazy(() => import('./components/BankReconSheet').then(module => ({ default: module.BankReconSheet })));
-const FixedAssetsSheet = lazy(() => import('./components/FixedAssetsSheet').then(module => ({ default: module.FixedAssetsSheet })));
-const AdvanceReimbursementSheet = lazy(() => import('./components/AdvanceReimbursementSheet').then(module => ({ default: module.AdvanceReimbursementSheet })));
-const DebtSheet = lazy(() => import('./components/DebtSheet').then(module => ({ default: module.DebtSheet })));
-const RecurringSheet = lazy(() => import('./components/RecurringSheet').then(module => ({ default: module.RecurringSheet })));
-const InvoiceSheet = lazy(() => import('./components/InvoiceSheet').then(module => ({ default: module.InvoiceSheet })));
-const ApprovalSheet = lazy(() => import('./components/ApprovalSheet').then(module => ({ default: module.ApprovalSheet })));
-const NotificationSheet = lazy(() => import('./components/NotificationSheet').then(module => ({ default: module.NotificationSheet })));
+// Lazy load SettingsSheet with named export handling
+const SettingsSheet = lazy(() => 
+  import('./components/SettingsSheet').then(module => ({ default: module.SettingsSheet }))
+);
 
 type TabType = 'transaction' | 'dashboard' | 'debt' | 'advance' | 'settings' | 'roles' | 'audit' | 'notifications' | ModuleType;
 
@@ -76,7 +78,7 @@ function App() {
     deleteDebtEntry,
     resetAllData,
     isOffline,
-  } = useSupabaseData();
+  } = useSupabaseData(user);
 
 
   // Notifications hook
@@ -84,54 +86,51 @@ function App() {
 
   // Check auth state and status
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       try {
-        // Add timeout to prevent infinite loading
+        // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Auth timeout')), 5000)
         );
 
-        const authPromise = (async () => {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) {
-            console.error("Session error:", error);
-            return;
-          }
+        // Race between auth check and timeout
+        const { data } = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]) as { data: { session: any } }; // Type assertion needed for Promise.race result
 
-          const currentUser = session?.user ?? null;
-          setUser(currentUser);
+        if (!isMounted) return;
+
+        const session = data?.session;
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        
+        if (currentUser) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', currentUser.id)
+            .maybeSingle();
           
-          if (currentUser) {
-            try {
-              const { data, error: profileError } = await supabase
-                .from('profiles')
-                .select('status')
-                .eq('id', currentUser.id)
-                .maybeSingle();
-              
-              if (profileError) {
-                console.error("Profile fetch error:", profileError);
-              }
-              if (data) setUserStatus(data.status || 'active');
-            } catch (err) {
-              console.error("Profile check failed:", err);
-            }
+          if (isMounted && profile) {
+            setUserStatus(profile.status || 'active');
           }
-        })();
-
-        await Promise.race([authPromise, timeoutPromise]);
-      } catch (err) {
-        console.error("Auth check failed or timed out:", err);
-        // If timeout or error, we stop loading and let user try to login or see empty state
-        // If they were actually logged in, the auth state change listener might catch it later
+        }
+      } catch (error) {
+        console.error('Auth check failed or timed out:', error);
+        // On error/timeout, we assume no user or let them try to login again
+        if (isMounted) setUser(null);
       } finally {
-        setAuthLoading(false);
+        if (isMounted) setAuthLoading(false);
       }
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -140,11 +139,14 @@ function App() {
           .select('status')
           .eq('id', currentUser.id)
           .maybeSingle();
-        if (data) setUserStatus(data.status || 'active');
+        if (isMounted && data) setUserStatus(data.status || 'active');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -314,75 +316,75 @@ function App() {
 
         {/* Content */}
         <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6 w-full">
-          <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>}>
-            {activeTab === 'transaction' && (
-              <TransactionSheet
-                incomeEntries={incomeEntries}
-                expenseEntries={expenseEntries}
-                incomeSources={incomeSources}
-                expenseCategories={expenseCategories}
-                paymentMethods={paymentMethods}
-                employees={employees}
-                onAddIncome={handleAddIncome}
-                onUpdateIncome={handleUpdateIncome}
-                onDeleteIncome={handleDeleteIncome}
-                onAddExpense={handleAddExpense}
-                onUpdateExpense={handleUpdateExpense}
-                onDeleteExpense={handleDeleteExpense}
-              />
-            )}
-            {activeTab === 'dashboard' && (
-              <DashboardSheet
-                incomeEntries={incomeEntries}
-                expenseEntries={expenseEntries}
-                expenseCategories={expenseCategories}
-                employees={employees}
-              />
-            )}
-            {activeTab === 'budget' && (
-              <BudgetSheet
-                incomeEntries={incomeEntries}
-                expenseEntries={expenseEntries}
-                expenseCategories={expenseCategories}
-                incomeSources={incomeSources}
-              />
-            )}
-            {activeTab === 'invoice' && <InvoiceSheet />}
-            {activeTab === 'recurring' && (
-              <RecurringSheet
-                expenseCategories={expenseCategories}
-                incomeSources={incomeSources}
-                employees={employees}
-              />
-            )}
-            {activeTab === 'approval' && <ApprovalSheet />}
-            {activeTab === 'bank-recon' && <BankReconSheet />}
-            {activeTab === 'financial-reports' && (
-              <FinancialReportsSheet
-                incomeEntries={incomeEntries}
-                expenseEntries={expenseEntries}
-                debtEntries={debtEntries}
-              />
-            )}
-            {activeTab === 'fixed-assets' && <FixedAssetsSheet />}
-            {activeTab === 'debt' && (
-              <DebtSheet
-                entries={debtEntries}
-                onAddEntry={handleAddDebt}
-                onUpdateEntry={handleUpdateDebt}
-                onDeleteEntry={handleDeleteDebt}
-              />
-            )}
-            {activeTab === 'advance' && (
-              <AdvanceReimbursementSheet
-                employees={employees}
-              />
-            )}
-            {activeTab === 'admin' && <AdminDashboard />}
-            {activeTab === 'roles' && <AdminDashboard initialTab="users" />}
-            {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
-            {activeTab === 'notifications' && <NotificationSheet />}
-            {activeTab === 'settings' && (
+          {activeTab === 'transaction' && (
+            <TransactionSheet
+              incomeEntries={incomeEntries}
+              expenseEntries={expenseEntries}
+              incomeSources={incomeSources}
+              expenseCategories={expenseCategories}
+              paymentMethods={paymentMethods}
+              employees={employees}
+              onAddIncome={handleAddIncome}
+              onUpdateIncome={handleUpdateIncome}
+              onDeleteIncome={handleDeleteIncome}
+              onAddExpense={handleAddExpense}
+              onUpdateExpense={handleUpdateExpense}
+              onDeleteExpense={handleDeleteExpense}
+            />
+          )}
+          {activeTab === 'dashboard' && (
+            <DashboardSheet
+              incomeEntries={incomeEntries}
+              expenseEntries={expenseEntries}
+              expenseCategories={expenseCategories}
+              employees={employees}
+            />
+          )}
+          {activeTab === 'budget' && (
+            <BudgetSheet
+              incomeEntries={incomeEntries}
+              expenseEntries={expenseEntries}
+              expenseCategories={expenseCategories}
+              incomeSources={incomeSources}
+            />
+          )}
+          {activeTab === 'invoice' && <InvoiceSheet />}
+          {activeTab === 'recurring' && (
+            <RecurringSheet
+              expenseCategories={expenseCategories}
+              incomeSources={incomeSources}
+              employees={employees}
+            />
+          )}
+          {activeTab === 'approval' && <ApprovalSheet />}
+          {activeTab === 'bank-recon' && <BankReconSheet />}
+          {activeTab === 'financial-reports' && (
+            <FinancialReportsSheet
+              incomeEntries={incomeEntries}
+              expenseEntries={expenseEntries}
+              debtEntries={debtEntries}
+            />
+          )}
+          {activeTab === 'fixed-assets' && <FixedAssetsSheet />}
+          {activeTab === 'debt' && (
+            <DebtSheet
+              entries={debtEntries}
+              onAddEntry={handleAddDebt}
+              onUpdateEntry={handleUpdateDebt}
+              onDeleteEntry={handleDeleteDebt}
+            />
+          )}
+          {activeTab === 'advance' && (
+            <AdvanceReimbursementSheet
+              employees={employees}
+            />
+          )}
+          {activeTab === 'admin' && <AdminDashboard />}
+          {activeTab === 'roles' && <AdminDashboard initialTab="users" />}
+          {activeTab === 'audit' && <AdminDashboard initialTab="logs" />}
+          {activeTab === 'notifications' && <NotificationSheet />}
+          {activeTab === 'settings' && (
+            <Suspense fallback={<div className="p-8 text-center flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>}>
               <SettingsSheet
                 incomeSources={incomeSources}
                 expenseCategories={expenseCategories}
@@ -396,8 +398,8 @@ function App() {
                 onNavigateToRoles={() => setActiveTab('roles')}
                 onNavigateToAudit={() => setActiveTab('audit')}
               />
-            )}
-          </Suspense>
+            </Suspense>
+          )}
         </div>
       </div>
     </div>
