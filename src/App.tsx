@@ -247,15 +247,30 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center p-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data...</p>
-          <button 
-             onClick={() => window.location.reload()}
-             className="mt-4 text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            Lama memuat? Klik untuk segarkan
-          </button>
+          <p className="text-gray-600 mb-4">Memuat data...</p>
+          <div className="flex flex-col gap-2">
+            <button 
+               onClick={() => window.location.reload()}
+               className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Lama memuat? Klik untuk segarkan
+            </button>
+            <button 
+               onClick={async () => {
+                  if (confirm('Ini akan menghapus data login tersimpan dan memuat ulang aplikasi. Lanjutkan?')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    await supabase.auth.signOut();
+                    window.location.reload();
+                  }
+               }}
+               className="text-xs text-red-500 hover:text-red-700 underline mt-2"
+            >
+              Reset Aplikasi (Jika error berlanjut)
+            </button>
+          </div>
         </div>
       </div>
     );
