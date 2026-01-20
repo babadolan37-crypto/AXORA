@@ -1,7 +1,8 @@
-import { Building2, Upload, CheckCircle, AlertCircle, X, Plus, Link } from 'lucide-react';
+import { Building2, Upload, CheckCircle, AlertCircle, X, Plus, Link, FileSpreadsheet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { ImportBankStatementModal } from './ImportBankStatementModal';
 
 interface BankAccount {
   id: string;
@@ -32,6 +33,7 @@ export function BankReconSheet() {
   const [loading, setLoading] = useState(true);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
   const [accountForm, setAccountForm] = useState({
@@ -267,13 +269,22 @@ export function BankReconSheet() {
             Bank Account
           </button>
           {selectedAccount && (
-            <button
-              onClick={() => setShowTransactionModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Upload size={18} />
-              Add Transaction
-            </button>
+            <>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FileSpreadsheet size={18} />
+                Import Excel
+              </button>
+              <button
+                onClick={() => setShowTransactionModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Upload size={18} />
+                Add Transaction
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -444,6 +455,18 @@ export function BankReconSheet() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && selectedAccountData && (
+        <ImportBankStatementModal
+            onClose={() => setShowImportModal(false)}
+            onSuccess={fetchData}
+            accountId={selectedAccountData.id}
+            accountName={selectedAccountData.accountName}
+            accountNumber={selectedAccountData.accountNumber}
+            bankName={selectedAccountData.bankName}
+        />
       )}
 
       {/* Add Account Modal */}
