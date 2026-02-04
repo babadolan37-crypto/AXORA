@@ -64,7 +64,7 @@ export const useStore=create<State & {
         transactions:current.transactions,
         debts:current.debts
       }
-      const next=structuredClone(data)
+      const next=JSON.parse(JSON.stringify(data)) as State
       fn(next)
       if(supabaseEnabled){void pushSupabase(next)}
       return next
