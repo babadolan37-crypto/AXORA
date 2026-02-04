@@ -57,7 +57,7 @@ export default function Pengaturan(){
 
         <div className="flex gap-2">
           <Input placeholder="Nama Komponen (mis: Tunjangan Makan)" value={newComp.name} onChange={(e:any)=>setNewComp({...newComp,name:e.target.value})} />
-          <Select value={newComp.type} onChange={(e:any)=>setNewComp({...newComp,type:e.target.value})}>
+          <Select value={newComp.type} onChange={(e:any)=>setNewComp({...newComp,type:e.target.value as 'income'|'deduction'})}>
             <option value="income">Penambah (Income)</option>
             <option value="deduction">Pengurang (Deduction)</option>
           </Select>

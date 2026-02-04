@@ -15,17 +15,7 @@
     "jsx": "preserve",
     "plugins": [{ "name": "next" }],
     "typeRoots": ["./types", "./node_modules/@types"],
-    "baseUrl": ".",
-    "paths": {
-      "react": ["types/react-shim.d.ts"],
-      "react-dom": ["types/modules-shim.d.ts"],
-      "next/link": ["types/modules-shim.d.ts"],
-      "next/navigation": ["types/modules-shim.d.ts"],
-      "lucide-react": ["types/modules-shim.d.ts"],
-      "@supabase/supabase-js": ["types/modules-shim.d.ts"],
-      "tailwindcss": ["types/modules-shim.d.ts"],
-      "zustand": ["types/modules-shim.d.ts"]
-    }
+    "baseUrl": "."
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts"],
   "exclude": ["node_modules"]
